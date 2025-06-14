@@ -1,0 +1,285 @@
+.navbar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 30px;
+  background: rgb(1, 22, 36);
+  height: 80px;
+}
+
+.nav-list {
+  gap: 20px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: auto;
+}
+
+.nav-item {
+  font-size: 16px;
+  font-weight: 600;
+  width: 110px;
+  height: 40px;
+  color: aliceblue;
+  background: linear-gradient(90deg, rgb(0, 0, 0), rgb(0, 0, 0) 50%);
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(14, 6, 3, 0.6);
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.nav-item:hover {
+  box-shadow: 0 0 20px rgba(255, 238, 0, 0.6);
+  transform: scale(1.05);
+}
+
+.icon {
+  padding: 0px 30px;
+}
+
+.dashboard-title {
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+  text-align: center;
+  color: aliceblue;
+  font-size: 40px;
+}
+
+.welcome {
+  display: flex;
+  background: orangered;
+  width: 200px;
+  height: auto;
+  border: 3px solid #ffcc00;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+}
+
+.name {
+  font-size: 27px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.nothing {
+  width: 0px;
+  height: 0px;
+  background: none;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+.swapCard {
+  background: rgba(0, 0, 0, 0.85);
+  width: 600px;
+  margin: 50px auto;
+  padding: 40px;
+  border-radius: 15px;
+  border: 2px solid #ffcc00;
+  box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+}
+
+.swapSection {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.topsect,
+.downsect {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.swapSection select,
+.swapSection input {
+  padding: 15px 20px;
+  font-size: 16px;
+  font-family: 'Orbitron', sans-serif;
+  border: none;
+  border-radius: 10px;
+  outline: none;
+  background: linear-gradient(145deg, #111, #1a1a1a);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.swapSection select:hover,
+.swapSection input:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+}
+
+select {
+  background-color: #fff;
+  color: #000;
+  font-family: 'Orbitron', sans-serif;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  border: 2px solid #ffcc00;
+}
+
+.dashboard-container1 {
+  padding: 10px;
+}
+
+option {
+  background-color: #fff;
+  color: #000;
+}
+
+.select-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: space-between;
+}
+
+.select-box {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.select-box label {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.dropdown {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.price-display {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.chart-container {
+  background: linear-gradient(45deg, #0e131d, rgb(56, 19, 1) 50%);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.price-equivalent {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 20px;
+  color: #ffcc00;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.8);
+}
+
+.conwallet {
+  justify-content: flex-end;
+  display: flex;
+  padding-right: 20px;
+}
+
+.conwallbtn {
+  font-size: 16px;
+  font-weight: 100;
+  width: 170px;
+  height: 60px;
+  color: aliceblue;
+  background: linear-gradient(90deg, rgb(3, 36, 49), rgb(1, 34, 12) 50%);
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(255, 72, 0, 0.6);
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.conwallbtn:hover {
+  transition: all 0.3s ease;
+  transform: scale(1.06);
+  box-shadow: 3px 1px 2px 1px #1e2430;
+}
+
+@media (max-width: 768px) {
+  .swapCard {
+    width: 80%;
+    padding: 30px 20px;
+  }
+
+  .dashboard-title {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-list {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-item {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .swapSection select,
+  .swapSection input {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: aliceblue;
+  font-size: 30px;
+  cursor: pointer;
+  padding-right: 10px;
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .nav-list {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    background: rgba(128, 128, 128, 0.7);
+    width: 200px;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 0 15px rgba(255, 72, 0, 0.6);
+    z-index: 999;
+  }
+
+  .nav-list.open {
+    display: flex;
+  }
+
+  .nav-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 4px;
+    margin: 5px 0;
+  }
+
+  .nav-item:hover {
+    transform: scale(1.03);
+  }
+}

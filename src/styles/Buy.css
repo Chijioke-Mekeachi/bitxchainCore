@@ -1,0 +1,247 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.tab-button {
+  background: transparent;
+  border: 2px solid #ff5100;
+  color: #ff5100;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 5px;
+  flex: 1 1 auto;
+  text-align: center;
+  min-width: 100px;
+}
+
+/* Desktop: fixed width 200px */
+@media (min-width: 769px) {
+  .tab-button {
+    width: 200px;
+    flex: none; /* fix width, disable flex grow/shrink */
+  }
+}
+
+.tab-button.active {
+  background: none;
+  color: #00ff00;
+  border: 2px solid #00ff00;
+}
+
+.tab-button:hover {
+  transform: scale(1.05);
+}
+
+.tab-content {
+  padding-top: 20px;
+}
+
+.textinput {
+  font-size: 14px;
+  font-weight: 200;
+  font-family: 'Courier New', Courier, monospace;
+  border: 0;
+  width: 95%;
+  padding: 0 10px;
+  border-radius: 5px;
+  background: none;
+  color: #fff;
+  height: 50px;
+  transition: background-color 0.3s ease;
+}
+
+.cont-buy-sell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding-bottom: 10px;
+  width: 100%;
+}
+
+.purchase-btn {
+  width: 200px;
+  height: 40px;
+  font-size: 24px;
+  border: 1.5px solid yellow;
+  background: none;
+  color: yellow;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.purchase-btn:hover {
+  background: yellow;
+  color: rgb(7, 7, 3);
+  transform: scale(1.02);
+  border: none;
+  transition: all 0.5s ease;
+}
+
+.btn-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.PayList {
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  border-radius: 4px;
+  border: none;
+  background: none;
+  color: #ffcc00;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.PayList:hover {
+  background: #ffcc00;
+  color: #000000;
+  transform: scale(1.02);
+}
+
+.buttons {
+  padding-top: 60px;
+  gap: 20px;
+  width: 95%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.coming {
+  color: gray;
+  font-size: small;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  background: #111;
+  border: 1px solid #ffcc00;
+  padding: 30px 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal h2 {
+  color: #ffcc00;
+  font-size: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.modal .textinput {
+  background: none;
+  border: 1px solid #ffcc00;
+  color: #fff;
+  width: 100%;
+  margin: 10px 0;
+  height: 45px;
+}
+
+.modal .purchase-btn {
+  margin-top: 20px;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffcc00;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.close-button:hover {
+  transform: scale(1.2);
+  color: #fff200;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .purchase-btn {
+    width: 150px;
+    font-size: 20px;
+  }
+  
+  .PayList {
+    font-size: 18px;
+  }
+  
+  .buttons {
+    padding-top: 40px;
+    gap: 15px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .purchase-btn {
+    width: 100%;
+    font-size: 18px;
+    height: 45px;
+  }
+  
+  .textinput {
+    font-size: 12px;
+    height: 45px;
+  }
+  
+  .PayList {
+    font-size: 16px;
+  }
+  
+  .buttons {
+    flex-direction: column;
+    padding-top: 30px;
+  }
+}
