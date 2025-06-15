@@ -12,16 +12,23 @@ export default function Wallet() {
   const [showRequestPopup, setShowRequestPopup] = useState(false);
   const [requestType, setRequestType] = useState("buy");
   const [requestAmount, setRequestAmount] = useState("");
+  const [isCheckingTransfer, setIsCheckingTransfer] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     fetchBlurtRate();
     fetchUserProfile();
   }, []);
 
+  useEffect(() => {
+    if (profile) {
+      handleTransferConfirmation();
+    }
+  }, [profile]);
+
   const fetchUserProfile = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     const userEmail = session?.user?.email;
 
     if (!userEmail) return;
@@ -54,8 +61,16 @@ export default function Wallet() {
     }
   };
 
+  const showSuccess = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessPopup(true);
+    setTimeout(() => {
+      setShowSuccessPopup(false);
+    }, 3000);
+  };
+
   const updateBlurtBalance = async () => {
-    if (!popupUsername) return alert("Please enter your Blurt username.");
+    if (!popupUsername) return showSuccess("Please enter your Blurt username.");
 
     try {
       const res = await fetch("https://rpc.blurt.world", {
@@ -71,7 +86,7 @@ export default function Wallet() {
 
       const json = await res.json();
       const account = json.result?.[0];
-      if (!account) return alert("Blurt account not found.");
+      if (!account) return showSuccess("Blurt account not found.");
 
       const balance = parseFloat(account.balance.split(" ")[0]);
       setBBalance(balance.toFixed(4));
@@ -82,7 +97,7 @@ export default function Wallet() {
         .eq("email", profile.email);
 
       if (error) console.error("Supabase update error:", error);
-      else alert("Blurt balance updated!");
+      else showSuccess("Blurt balance updated!");
     } catch (error) {
       console.error("Blurt balance fetch error:", error);
     } finally {
@@ -97,7 +112,7 @@ export default function Wallet() {
 
   const sendRequestEmail = async () => {
     if (!requestAmount || isNaN(requestAmount)) {
-      alert("Please enter a valid amount.");
+      showSuccess("Please enter a valid amount.");
       return;
     }
 
@@ -116,13 +131,75 @@ export default function Wallet() {
         templateParams,
         "HIblo4h_NIYHJgbHb"
       );
-      alert("Request sent successfully!");
+      showSuccess("Request sent successfully!");
       setShowRequestPopup(false);
       setRequestAmount("");
     } catch (err) {
       console.error("EmailJS error:", err);
-      alert("Failed to send request.");
+      showSuccess("Failed to send request.");
     }
+  };
+
+  const handleTransferConfirmation = async () => {
+    setIsCheckingTransfer(true);
+    try {
+      const response = await fetch("https://rpc.blurt.world", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "call",
+          params: ["condenser_api", "get_account_history", ["bitxchain", -1, 1000]],
+          id: 1,
+        }),
+      });
+
+      const json = await response.json();
+      const history = json.result;
+
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+      const matchingTxs = history
+        .map(([, tx]) => tx)
+        .filter((tx) => {
+          const isTransfer = tx.op[0] === "transfer";
+          const matchesMemo = tx.op[1].memo === profile.memo;
+          const isToBitxchain = tx.op[1].to === "bitxchain";
+          const txTime = new Date(tx.timestamp + "Z");
+          return isTransfer && matchesMemo && isToBitxchain && txTime >= threeDaysAgo;
+        })
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      if (matchingTxs.length > 0) {
+        const latestTx = matchingTxs[0];
+        const amountReceived = parseFloat(latestTx.op[1].amount.split(" ")[0]);
+        const currentBalance = parseFloat(bbalance);
+        const newBalance = currentBalance + amountReceived;
+
+        const newMemo = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        const { error } = await supabase
+          .from("users")
+          .update({ bbalance: newBalance, memo: newMemo })
+          .eq("email", profile.email);
+
+        if (error) {
+          console.error("Supabase update error:", error);
+          showSuccess("Error updating Supabase.");
+        } else {
+          setBBalance(newBalance.toFixed(4));
+          setProfile((prev) => ({ ...prev, bbalance: newBalance, memo: newMemo }));
+          showSuccess(`Received ${amountReceived} BLURT. Memo has been changed.`);
+        }
+      } else {
+        showSuccess("No recent matching transaction found.");
+      }
+    } catch (err) {
+      console.error("Error checking transfer:", err);
+      showSuccess("Failed to check transfer.");
+    }
+    setIsCheckingTransfer(false);
   };
 
   if (!profile) return <div className="loading">Loading wallet...</div>;
@@ -131,14 +208,10 @@ export default function Wallet() {
     <div className="dashboard">
       <div className="dashboard-grid">
         <div className="profile-card">
-          <img
-            src={`https://placehold.co/100x100?text=${profile.username?.[0] || "U"}`}
-            alt="User"
-            className="avatar"
-          />
-          <p><strong>Email:</strong> {profile.email}</p>
-          <p><strong>Blurt Username:</strong> {profile.busername}</p>
-          <p><strong>Memo:</strong> {profile.memo}</p>
+          <h2>{profile.username}</h2>
+          <p>Email: {profile.email}</p>
+          <p>Blurt Username: {profile.busername}</p>
+          <p>Memo: <code>{profile.memo}</code></p>
         </div>
 
         <div className="wallet-section">
@@ -156,13 +229,11 @@ export default function Wallet() {
           </div>
 
           <div className="memo-box">
-            <p><strong>Memo Key:</strong> {profile.memo}</p>
-            <ul>
-              <li>Send BLURT to <code>blurtexchanger</code></li>
-              <li>Use the memo key provided above</li>
-              <li>Click "I have made a transfer" when done</li>
-            </ul>
-            <button className="btn black">I have made a transfer</button>
+            <p><strong>Send BLURT to:</strong> <code>bitxchain</code></p>
+            <p><strong>Use Memo:</strong> <code>{profile.memo}</code></p>
+            <button className="btn black" onClick={handleTransferConfirmation}>
+              {isCheckingTransfer ? "Checking..." : "I have made a transfer"}
+            </button>
           </div>
 
           <div className="btn-group">
@@ -201,7 +272,7 @@ export default function Wallet() {
             <h3>{requestType.toUpperCase()} BLURT</h3>
             <input
               type="number"
-              placeholder="Enter amount of Blurt"
+              placeholder="Enter amount"
               value={requestAmount}
               onChange={(e) => setRequestAmount(e.target.value)}
               className="popup-input"
@@ -210,6 +281,14 @@ export default function Wallet() {
               <button className="btn" onClick={sendRequestEmail}>Send Request</button>
               <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessPopup && (
+        <div className="popup-overlay">
+          <div className="popup success">
+            <h3>✅ {successMessage}</h3>
           </div>
         </div>
       )}

@@ -241,6 +241,95 @@
   background-color: #f44336;
 }
 
+/* Overlay Background */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* Popup Container */
+.popup {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 90%;
+  width: 350px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Input Field Inside Popup */
+.popup-input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 1rem;
+  margin-bottom: 1.2rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+/* Button Group in Popup */
+.popup-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.popup-buttons .btn {
+  flex: 1;
+  padding: 10px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.popup-buttons .btn:hover {
+  opacity: 0.9;
+}
+
+.popup-buttons .btn.cancel {
+  background-color: #f44336;
+  color: #fff;
+}
+
+.popup-buttons .btn:not(.cancel) {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+/* Success Styling */
+.popup.success {
+  background-color: #e6ffe6;
+  border: 1px solid #4caf50;
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+/* Simple Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
