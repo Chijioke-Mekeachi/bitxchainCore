@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./wallet.css";
 import { supabase } from "../../../lib/supabase";
-import emailjs from "@emailjs/browser";
 
 export default function Wallet() {
   const [profile, setProfile] = useState(null);
@@ -13,23 +12,15 @@ export default function Wallet() {
   const [requestType, setRequestType] = useState("buy");
   const [requestAmount, setRequestAmount] = useState("");
   const [isCheckingTransfer, setIsCheckingTransfer] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [showMessagePopup, setShowMessagePopup] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success"); // 'success' or 'error'
   const [bvalue, setBValue] = useState("0.00");
-
 
   useEffect(() => {
     fetchBlurtRate();
     fetchUserProfile();
   }, []);
-
-  useEffect(() => {
-    if (profile) {
-      handleTransferConfirmation();
-    }
-  }, [profile]);
-
-
 
   const fetchUserProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -51,7 +42,7 @@ export default function Wallet() {
     setProfile(data);
     setPopupUsername(data.busername || "");
     setBBalance(data.bbalance || "0.00");
-    setBValue(data.bvalue || "0.00"); // <-- Add this
+    setBValue(data.bvalue || "0.00");
   };
 
   const fetchBlurtRate = async () => {
@@ -66,16 +57,17 @@ export default function Wallet() {
     }
   };
 
-  const showSuccess = (message) => {
-    setSuccessMessage(message);
-    setShowSuccessPopup(true);
+  const showMessage = (msg, type = "success") => {
+    setMessage(msg);
+    setMessageType(type);
+    setShowMessagePopup(true);
     setTimeout(() => {
-      setShowSuccessPopup(false);
+      setShowMessagePopup(false);
     }, 3000);
   };
 
   const updateBlurtBalance = async () => {
-    if (!popupUsername) return showSuccess("Please enter your Blurt username.");
+    if (!popupUsername) return showMessage("Please enter your Blurt username.", "error");
 
     try {
       const res = await fetch("https://rpc.blurt.world", {
@@ -91,7 +83,7 @@ export default function Wallet() {
 
       const json = await res.json();
       const account = json.result?.[0];
-      if (!account) return showSuccess("Blurt account not found.");
+      if (!account) return showMessage("Blurt account not found.", "error");
 
       const balance = parseFloat(account.balance.split(" ")[0]);
       setBBalance(balance.toFixed(4));
@@ -101,10 +93,15 @@ export default function Wallet() {
         .update({ bbalance: balance })
         .eq("email", profile.email);
 
-      if (error) console.error("Supabase update error:", error);
-      else showSuccess("Blurt balance updated!");
+      if (error) {
+        console.error("Supabase update error:", error);
+        showMessage("Failed to update balance.", "error");
+      } else {
+        showMessage("Blurt balance updated!");
+      }
     } catch (error) {
       console.error("Blurt balance fetch error:", error);
+      showMessage("Failed to fetch Blurt balance.", "error");
     } finally {
       setShowPopup(false);
     }
@@ -115,33 +112,42 @@ export default function Wallet() {
     setShowRequestPopup(true);
   };
 
-  const sendRequestEmail = async () => {
+  const sendRequestToSupabase = async () => {
     if (!requestAmount || isNaN(requestAmount)) {
-      showSuccess("Please enter a valid amount.");
+      showMessage("Please enter a valid amount.", "error");
       return;
     }
 
-    const templateParams = {
-      name: profile.username,
-      username: profile.busername,
-      amount: requestAmount,
-      time: new Date().toLocaleString(),
-      request_type: requestType.toUpperCase(),
-    };
+    // Check balance if selling blurt
+    if (requestType === "sell") {
+      const userBalance = parseFloat(bbalance);
+      const amountToSell = parseFloat(requestAmount);
 
-    try {
-      await emailjs.send(
-        "service_fsn8ljb",
-        "template_go4xsnc",
-        templateParams,
-        "HIblo4h_NIYHJgbHb"
-      );
-      showSuccess("Request sent successfully!");
+      if (amountToSell > userBalance) {
+        showMessage("You don't have up to this amount.", "error");
+        return;
+      }
+    }
+
+    const { error } = await supabase.from("blurt_requests").insert([
+      {
+        user_id: profile.id,
+        username: profile.username,
+        busername: profile.busername,
+        email: profile.email,
+        request_type: requestType.toUpperCase(),
+        amount: parseFloat(requestAmount),
+        memo: profile.memo,
+      },
+    ]);
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      showMessage("Failed to send request.", "error");
+    } else {
+      showMessage("Request submitted successfully!");
       setShowRequestPopup(false);
       setRequestAmount("");
-    } catch (err) {
-      console.error("EmailJS error:", err);
-      showSuccess("Failed to send request.");
     }
   };
 
@@ -181,7 +187,6 @@ export default function Wallet() {
         const amountReceived = parseFloat(latestTx.op[1].amount.split(" ")[0]);
         const currentBalance = parseFloat(bbalance);
         const newBalance = currentBalance + amountReceived;
-
         const newMemo = Math.random().toString(36).substring(2, 10).toUpperCase();
 
         const { error } = await supabase
@@ -191,18 +196,18 @@ export default function Wallet() {
 
         if (error) {
           console.error("Supabase update error:", error);
-          showSuccess("Error updating Supabase.");
+          showMessage("Error updating Supabase.", "error");
         } else {
           setBBalance(newBalance.toFixed(4));
           setProfile((prev) => ({ ...prev, bbalance: newBalance, memo: newMemo }));
-          showSuccess(`Received ${amountReceived} BLURT. Memo has been changed.`);
+          showMessage(`Received ${amountReceived} BLURT. Memo has been changed.`);
         }
       } else {
-        showSuccess("No recent matching transaction found.");
+        showMessage("No recent matching transaction found.", "error");
       }
     } catch (err) {
       console.error("Error checking transfer:", err);
-      showSuccess("Failed to check transfer.");
+      showMessage("Failed to check transfer.", "error");
     }
     setIsCheckingTransfer(false);
   };
@@ -226,15 +231,13 @@ export default function Wallet() {
               <p className="small-text">1 BLURT ≈ ₦{blurtRate ?? "..."}</p>
             </div>
             <div className="right-text">
-              <p className="big-text">
-                ₦{bvalue}
-              </p>
+              <p className="big-text">₦{bvalue}</p>
               <button className="btn green">Withdraw</button>
             </div>
-
           </div>
 
           <div className="memo-box">
+            <h2>Fund account via Transfer</h2>
             <p><strong>Send BLURT to:</strong> <code>bitxchain</code></p>
             <p><strong>Use Memo:</strong> <code>{profile.memo}</code></p>
             <button className="btn black" onClick={handleTransferConfirmation}>
@@ -243,16 +246,37 @@ export default function Wallet() {
           </div>
 
           <div className="btn-group">
-            <button className="btn blue">💰 Add Fund</button>
+            <button className="btn blue" onClick={() => setShowPopup(true)}>💰 Add Fund</button>
             <button className="btn purple" onClick={() => handleBlurtRequest("buy")}>💱 Buy Blurt</button>
             <button className="btn yellow" onClick={() => handleBlurtRequest("sell")}>💵 Sell Blurt</button>
           </div>
         </div>
       </div>
 
+      {/* Add Fund popup */}
+      {showPopup && (
+        <div className="popup-overlay" onClick={() => setShowPopup(false)}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <h3>Update Blurt Balance</h3>
+            <input
+              type="text"
+              placeholder="Blurt Username"
+              value={popupUsername}
+              onChange={(e) => setPopupUsername(e.target.value)}
+              className="popup-input"
+            />
+            <div className="popup-buttons">
+              <button className="btn" onClick={updateBlurtBalance}>Update Balance</button>
+              <button className="btn cancel" onClick={() => setShowPopup(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Buy/Sell Request popup */}
       {showRequestPopup && (
         <div className="popup-overlay">
-          <div className="popup">
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
             <h3>{requestType.toUpperCase()} BLURT</h3>
             <input
               type="number"
@@ -262,17 +286,18 @@ export default function Wallet() {
               className="popup-input"
             />
             <div className="popup-buttons">
-              <button className="btn" onClick={sendRequestEmail}>Send Request</button>
+              <button className="btn" onClick={sendRequestToSupabase}>Send Request</button>
               <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {showSuccessPopup && (
+      {/* Success/Error Message popup */}
+      {showMessagePopup && (
         <div className="popup-overlay">
-          <div className="popup success">
-            <h3>✅ {successMessage}</h3>
+          <div className={`popup ${messageType}`}>
+            <h3>{messageType === "success" ? "✅" : "❌"} {message}</h3>
           </div>
         </div>
       )}
