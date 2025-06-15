@@ -50,9 +50,7 @@ export default function Dashboard() {
   }, []);
 
   const handle_stat = () => { setStat(true); setSwap(false); setProfile(false); setBuy(false); setWallet(false); setMenuOpen(false); };
-  const handle_swap = () => { setStat(false); setSwap(true); setProfile(false); setBuy(false); setWallet(false); setMenuOpen(false); };
   const handle_profile = () => { setStat(false); setSwap(false); setProfile(true); setBuy(false); setWallet(false); setMenuOpen(false); };
-  const handle_buy = () => { setStat(false); setSwap(false); setProfile(false); setBuy(true); setWallet(false); setMenuOpen(false); };
   const handle_wallet = () => { setStat(false); setSwap(false); setProfile(false); setBuy(false); setWallet(true); setMenuOpen(false); };
 
   return (
@@ -66,7 +64,6 @@ export default function Dashboard() {
         </button>
         <ul className={`nav-list ${menuOpen ? 'open' : ''}`}>
           <button className="nav-item" onClick={handle_stat}>Home</button>
-          <button className="nav-item" onClick={handle_buy}>Buy & Sell</button>
           <button className="nav-item" onClick={handle_profile}>Profile</button>
           <button className="nav-item" onClick={handle_wallet}>Wallet</button>
         </ul>
