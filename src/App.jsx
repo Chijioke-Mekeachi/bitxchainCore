@@ -4,6 +4,7 @@ import { LoginPage } from '../src/components/login/Login';
 import { Signup } from './components/signup/Signup';
 import Dashboard from './components/dashboard/Dashboard';
 import { Home } from './components/home/Home';
+import SuccessScreen from './components/sucessful/Success';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<LoginPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/success" element={<SuccessScreen />} />
       </Routes>
     </Router>
   );
