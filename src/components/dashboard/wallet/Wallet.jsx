@@ -15,6 +15,8 @@ export default function Wallet() {
   const [isCheckingTransfer, setIsCheckingTransfer] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [bvalue, setBValue] = useState("0.00");
+
 
   useEffect(() => {
     fetchBlurtRate();
@@ -26,6 +28,8 @@ export default function Wallet() {
       handleTransferConfirmation();
     }
   }, [profile]);
+
+
 
   const fetchUserProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -47,6 +51,7 @@ export default function Wallet() {
     setProfile(data);
     setPopupUsername(data.busername || "");
     setBBalance(data.bbalance || "0.00");
+    setBValue(data.bvalue || "0.00"); // <-- Add this
   };
 
   const fetchBlurtRate = async () => {
@@ -222,10 +227,11 @@ export default function Wallet() {
             </div>
             <div className="right-text">
               <p className="big-text">
-                ₦{blurtRate && bbalance ? (blurtRate * bbalance).toFixed(2) : "0.00"}
+                ₦{bvalue}
               </p>
               <button className="btn green">Withdraw</button>
             </div>
+
           </div>
 
           <div className="memo-box">
@@ -240,31 +246,9 @@ export default function Wallet() {
             <button className="btn blue">💰 Add Fund</button>
             <button className="btn purple" onClick={() => handleBlurtRequest("buy")}>💱 Buy Blurt</button>
             <button className="btn yellow" onClick={() => handleBlurtRequest("sell")}>💵 Sell Blurt</button>
-            <button className="btn dark" onClick={() => setShowPopup(true)}>
-              ➕ Add Blurt Balance
-            </button>
           </div>
         </div>
       </div>
-
-      {showPopup && (
-        <div className="popup-overlay">
-          <div className="popup">
-            <h3>Fetch Blurt Balance</h3>
-            <input
-              type="text"
-              placeholder="Enter Blurt Username"
-              value={popupUsername}
-              onChange={(e) => setPopupUsername(e.target.value)}
-              className="popup-input"
-            />
-            <div className="popup-buttons">
-              <button className="btn" onClick={updateBlurtBalance}>Fetch</button>
-              <button className="btn cancel" onClick={() => setShowPopup(false)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showRequestPopup && (
         <div className="popup-overlay">
