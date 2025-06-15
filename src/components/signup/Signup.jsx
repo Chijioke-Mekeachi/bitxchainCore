@@ -63,7 +63,7 @@ export const Signup = () => {
       }
 
       // Insert into users table
-      const memo = `${username}-${Math.random().toString(36).substring(2, 10)}`;
+      const memo = `${Math.random().toString(36).substring(2, 10)}`;
       const { error: insertError } = await supabase.from('users').insert([
         {
           username,
