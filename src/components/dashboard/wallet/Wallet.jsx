@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./wallet.css";
 import { supabase } from "../../../lib/supabase";
+import emailjs from "@emailjs/browser";
 
 export default function Wallet() {
   const [profile, setProfile] = useState(null);
@@ -8,6 +9,9 @@ export default function Wallet() {
   const [blurtRate, setBlurtRate] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupUsername, setPopupUsername] = useState("");
+  const [showRequestPopup, setShowRequestPopup] = useState(false);
+  const [requestType, setRequestType] = useState("buy");
+  const [requestAmount, setRequestAmount] = useState("");
 
   useEffect(() => {
     fetchBlurtRate();
@@ -15,7 +19,9 @@ export default function Wallet() {
   }, []);
 
   const fetchUserProfile = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const userEmail = session?.user?.email;
 
     if (!userEmail) return;
@@ -38,7 +44,9 @@ export default function Wallet() {
 
   const fetchBlurtRate = async () => {
     try {
-      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=blurt&vs_currencies=ngn");
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=blurt&vs_currencies=ngn"
+      );
       const data = await res.json();
       setBlurtRate(data.blurt.ngn);
     } catch (err) {
@@ -79,6 +87,41 @@ export default function Wallet() {
       console.error("Blurt balance fetch error:", error);
     } finally {
       setShowPopup(false);
+    }
+  };
+
+  const handleBlurtRequest = (type) => {
+    setRequestType(type);
+    setShowRequestPopup(true);
+  };
+
+  const sendRequestEmail = async () => {
+    if (!requestAmount || isNaN(requestAmount)) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    const templateParams = {
+      name: profile.username,
+      username: profile.busername,
+      amount: requestAmount,
+      time: new Date().toLocaleString(),
+      request_type: requestType.toUpperCase(),
+    };
+
+    try {
+      await emailjs.send(
+        "service_fsn8ljb",
+        "template_go4xsnc",
+        templateParams,
+        "HIblo4h_NIYHJgbHb"
+      );
+      alert("Request sent successfully!");
+      setShowRequestPopup(false);
+      setRequestAmount("");
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      alert("Failed to send request.");
     }
   };
 
@@ -124,8 +167,8 @@ export default function Wallet() {
 
           <div className="btn-group">
             <button className="btn blue">💰 Add Fund</button>
-            <button className="btn purple">💱 Buy Blurt</button>
-            <button className="btn yellow">💵 Sell Blurt</button>
+            <button className="btn purple" onClick={() => handleBlurtRequest("buy")}>💱 Buy Blurt</button>
+            <button className="btn yellow" onClick={() => handleBlurtRequest("sell")}>💵 Sell Blurt</button>
             <button className="btn dark" onClick={() => setShowPopup(true)}>
               ➕ Add Blurt Balance
             </button>
@@ -147,6 +190,25 @@ export default function Wallet() {
             <div className="popup-buttons">
               <button className="btn" onClick={updateBlurtBalance}>Fetch</button>
               <button className="btn cancel" onClick={() => setShowPopup(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRequestPopup && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <h3>{requestType.toUpperCase()} BLURT</h3>
+            <input
+              type="number"
+              placeholder="Enter amount of Blurt"
+              value={requestAmount}
+              onChange={(e) => setRequestAmount(e.target.value)}
+              className="popup-input"
+            />
+            <div className="popup-buttons">
+              <button className="btn" onClick={sendRequestEmail}>Send Request</button>
+              <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
             </div>
           </div>
         </div>
