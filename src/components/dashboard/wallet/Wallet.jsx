@@ -4,18 +4,19 @@ import { supabase } from "../../../lib/supabase";
 
 export default function Wallet() {
   const [profile, setProfile] = useState(null);
-  const [bbalance, setBBalance] = useState("0.00");
+  const [blurtBalance, setBlurtBalance] = useState("0.0000");
+  const [nairaBalance, setNairaBalance] = useState("0.00");
   const [blurtRate, setBlurtRate] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupUsername, setPopupUsername] = useState("");
   const [showRequestPopup, setShowRequestPopup] = useState(false);
+  const [showSellPopup, setShowSellPopup] = useState(false);
   const [requestType, setRequestType] = useState("buy");
   const [requestAmount, setRequestAmount] = useState("");
   const [isCheckingTransfer, setIsCheckingTransfer] = useState(false);
   const [showMessagePopup, setShowMessagePopup] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("success"); // 'success' or 'error'
-  const [bvalue, setBValue] = useState("0.00");
+  const [messageType, setMessageType] = useState("success");
 
   useEffect(() => {
     fetchBlurtRate();
@@ -25,7 +26,6 @@ export default function Wallet() {
   const fetchUserProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const userEmail = session?.user?.email;
-
     if (!userEmail) return;
 
     const { data, error } = await supabase
@@ -41,8 +41,8 @@ export default function Wallet() {
 
     setProfile(data);
     setPopupUsername(data.busername || "");
-    setBBalance(data.bbalance || "0.00");
-    setBValue(data.bvalue || "0.00");
+    setBlurtBalance(data.bbalance != null ? parseFloat(data.bbalance).toFixed(4) : "0.0000");
+    setNairaBalance(data.balance != null ? parseFloat(data.balance).toFixed(2) : "0.00");
   };
 
   const fetchBlurtRate = async () => {
@@ -51,7 +51,9 @@ export default function Wallet() {
         "https://api.coingecko.com/api/v3/simple/price?ids=blurt&vs_currencies=ngn"
       );
       const data = await res.json();
-      setBlurtRate(data.blurt.ngn);
+      if (data?.blurt?.ngn != null) {
+        setBlurtRate(data.blurt.ngn);
+      }
     } catch (err) {
       console.error("Failed to fetch Blurt rate:", err);
     }
@@ -64,6 +66,76 @@ export default function Wallet() {
     setTimeout(() => {
       setShowMessagePopup(false);
     }, 3000);
+  };
+
+  const handleSellBlurt = async (amountStr) => {
+    const amt = parseFloat(amountStr);
+    if (isNaN(amt) || amt <= 0) {
+      showMessage("Invalid amount.", "error");
+      return;
+    }
+
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) {
+      console.error("Failed to get user:", authError?.message || "No user found");
+      showMessage("User not authenticated.", "error");
+      return;
+    }
+    const userEmail = authUser.email;
+
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('bbalance, balance')
+      .eq('email', userEmail)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching balances:', fetchError.message);
+      showMessage("Failed to fetch balances.", "error");
+      return;
+    }
+
+    const currentBlurtBalance = parseFloat(user.bbalance);
+    const currentNairaBalance = parseFloat(user.balance);
+    if (isNaN(currentBlurtBalance) || isNaN(currentNairaBalance)) {
+      console.error("Balance values are invalid:", user);
+      showMessage("Balance values are invalid.", "error");
+      return;
+    }
+
+    if (currentBlurtBalance < amt) {
+      showMessage("Insufficient Blurt balance.", "error");
+      return;
+    }
+
+    const rate = parseFloat(blurtRate);
+    if (isNaN(rate) || rate <= 0) {
+      console.error("Invalid blurtRate:", blurtRate);
+      showMessage("Invalid Blurt rate.", "error");
+      return;
+    }
+
+    const newNairaBalance = currentNairaBalance + rate * amt;
+    const newBlurtBalance = currentBlurtBalance - amt;
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({ balance: newNairaBalance, bbalance: newBlurtBalance })
+      .eq('email', userEmail)
+      .select();
+
+    if (updateError) {
+      console.error('Failed to update balances:', updateError.message);
+      showMessage("Failed to update balances.", "error");
+    } else {
+      console.log('Balances updated:', updatedUser);
+      setBlurtBalance(newBlurtBalance.toFixed(4));
+      setNairaBalance(newNairaBalance.toFixed(2));
+      setProfile(prev => prev ? { ...prev, bbalance: newBlurtBalance, balance: newNairaBalance } : null);
+      showMessage('Sell successful!', 'success');
+      setShowSellPopup(false);
+      setRequestAmount("");
+    }
   };
 
   const updateBlurtBalance = async () => {
@@ -86,7 +158,7 @@ export default function Wallet() {
       if (!account) return showMessage("Blurt account not found.", "error");
 
       const balance = parseFloat(account.balance.split(" ")[0]);
-      setBBalance(balance.toFixed(4));
+      setBlurtBalance(balance.toFixed(4));
 
       const { error } = await supabase
         .from("users")
@@ -110,6 +182,7 @@ export default function Wallet() {
   const handleBlurtRequest = (type) => {
     setRequestType(type);
     setShowRequestPopup(true);
+    setRequestAmount("");
   };
 
   const sendRequestToSupabase = async () => {
@@ -118,11 +191,9 @@ export default function Wallet() {
       return;
     }
 
-    // Check balance if selling blurt
     if (requestType === "sell") {
-      const userBalance = parseFloat(bbalance);
+      const userBalance = parseFloat(blurtBalance);
       const amountToSell = parseFloat(requestAmount);
-
       if (amountToSell > userBalance) {
         showMessage("You don't have up to this amount.", "error");
         return;
@@ -147,6 +218,7 @@ export default function Wallet() {
     } else {
       showMessage("Request submitted successfully!");
       setShowRequestPopup(false);
+      setShowSellPopup(false);
       setRequestAmount("");
     }
   };
@@ -160,7 +232,7 @@ export default function Wallet() {
         body: JSON.stringify({
           jsonrpc: "2.0",
           method: "call",
-          params: ["condenser_api", "get_account_history", ["bitxchain", -1, 1000]],
+          params: ["condenser_api", "get_account_history", [profile.busername, -1, 1000]],
           id: 1,
         }),
       });
@@ -185,7 +257,7 @@ export default function Wallet() {
       if (matchingTxs.length > 0) {
         const latestTx = matchingTxs[0];
         const amountReceived = parseFloat(latestTx.op[1].amount.split(" ")[0]);
-        const currentBalance = parseFloat(bbalance);
+        const currentBalance = parseFloat(blurtBalance);
         const newBalance = currentBalance + amountReceived;
         const newMemo = Math.random().toString(36).substring(2, 10).toUpperCase();
 
@@ -198,8 +270,8 @@ export default function Wallet() {
           console.error("Supabase update error:", error);
           showMessage("Error updating Supabase.", "error");
         } else {
-          setBBalance(newBalance.toFixed(4));
-          setProfile((prev) => ({ ...prev, bbalance: newBalance, memo: newMemo }));
+          setBlurtBalance(newBalance.toFixed(4));
+          setProfile((prev) => (prev ? { ...prev, bbalance: newBalance, memo: newMemo } : null));
           showMessage(`Received ${amountReceived} BLURT. Memo has been changed.`);
         }
       } else {
@@ -227,11 +299,11 @@ export default function Wallet() {
         <div className="wallet-section">
           <div className="wallet-info">
             <div>
-              <p className="big-text">{bbalance} BLURT</p>
+              <p className="big-text">{blurtBalance} BLURT</p>
               <p className="small-text">1 BLURT ≈ ₦{blurtRate ?? "..."}</p>
             </div>
             <div className="right-text">
-              <p className="big-text">₦{bvalue}</p>
+              <p className="big-text">₦{nairaBalance}</p>
               <button className="btn green">Withdraw</button>
             </div>
           </div>
@@ -248,7 +320,7 @@ export default function Wallet() {
           <div className="btn-group">
             <button className="btn blue" onClick={() => setShowPopup(true)}>💰 Add Fund</button>
             <button className="btn purple" onClick={() => handleBlurtRequest("buy")}>💱 Buy Blurt</button>
-            <button className="btn yellow" onClick={() => handleBlurtRequest("sell")}>💵 Sell Blurt</button>
+            <button className="btn yellow" onClick={() => { setRequestType("sell"); setShowSellPopup(true); setRequestAmount(""); }}>💵 Sell Blurt</button>
           </div>
         </div>
       </div>
@@ -288,6 +360,26 @@ export default function Wallet() {
             <div className="popup-buttons">
               <button className="btn" onClick={sendRequestToSupabase}>Send Request</button>
               <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sell Request popup */}
+      {showSellPopup && (
+        <div className="popup-overlay">
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <h3>SELL BLURT</h3>
+            <input
+              type="number"
+              placeholder="Enter amount"
+              value={requestAmount}
+              onChange={(e) => setRequestAmount(e.target.value)}
+              className="popup-input"
+            />
+            <div className="popup-buttons">
+              <button className="btn" onClick={() => handleSellBlurt(requestAmount)}>Send Request</button>
+              <button className="btn cancel" onClick={() => setShowSellPopup(false)}>Cancel</button>
             </div>
           </div>
         </div>
