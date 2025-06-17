@@ -70,65 +70,37 @@ export default function Wallet() {
 
   const handleSellBlurt = async (amountStr) => {
     const amt = parseFloat(amountStr);
-    if (isNaN(amt) || amt <= 0) {
-      showMessage("Invalid amount.", "error");
-      return;
-    }
+    if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-    if (authError || !authUser) {
-      console.error("Failed to get user:", authError?.message || "No user found");
-      showMessage("User not authenticated.", "error");
-      return;
-    }
-    const userEmail = authUser.email;
+    if (authError || !authUser) return showMessage("User not authenticated.", "error");
 
     const { data: user, error: fetchError } = await supabase
       .from('users')
       .select('bbalance, balance')
-      .eq('email', userEmail)
+      .eq('email', authUser.email)
       .single();
 
-    if (fetchError) {
-      console.error('Error fetching balances:', fetchError.message);
-      showMessage("Failed to fetch balances.", "error");
-      return;
-    }
+    if (fetchError) return showMessage("Failed to fetch balances.", "error");
 
     const currentBlurtBalance = parseFloat(user.bbalance);
     const currentNairaBalance = parseFloat(user.balance);
-    if (isNaN(currentBlurtBalance) || isNaN(currentNairaBalance)) {
-      console.error("Balance values are invalid:", user);
-      showMessage("Balance values are invalid.", "error");
-      return;
-    }
-
-    if (currentBlurtBalance < amt) {
-      showMessage("Insufficient Blurt balance.", "error");
-      return;
-    }
+    if (currentBlurtBalance < amt) return showMessage("Insufficient Blurt balance.", "error");
 
     const rate = parseFloat(blurtRate);
-    if (isNaN(rate) || rate <= 0) {
-      console.error("Invalid blurtRate:", blurtRate);
-      showMessage("Invalid Blurt rate.", "error");
-      return;
-    }
+    if (isNaN(rate) || rate <= 0) return showMessage("Invalid Blurt rate.", "error");
 
     const newNairaBalance = currentNairaBalance + rate * amt;
     const newBlurtBalance = currentBlurtBalance - amt;
 
-    const { data: updatedUser, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('users')
       .update({ balance: newNairaBalance, bbalance: newBlurtBalance })
-      .eq('email', userEmail)
-      .select();
+      .eq('email', authUser.email);
 
     if (updateError) {
-      console.error('Failed to update balances:', updateError.message);
       showMessage("Failed to update balances.", "error");
     } else {
-      console.log('Balances updated:', updatedUser);
       setBlurtBalance(newBlurtBalance.toFixed(4));
       setNairaBalance(newNairaBalance.toFixed(2));
       setProfile(prev => prev ? { ...prev, bbalance: newBlurtBalance, balance: newNairaBalance } : null);
@@ -165,14 +137,9 @@ export default function Wallet() {
         .update({ bbalance: balance })
         .eq("email", profile.email);
 
-      if (error) {
-        console.error("Supabase update error:", error);
-        showMessage("Failed to update balance.", "error");
-      } else {
-        showMessage("Blurt balance updated!");
-      }
+      if (error) return showMessage("Failed to update balance.", "error");
+      showMessage("Blurt balance updated!");
     } catch (error) {
-      console.error("Blurt balance fetch error:", error);
       showMessage("Failed to fetch Blurt balance.", "error");
     } finally {
       setShowPopup(false);
@@ -191,13 +158,9 @@ export default function Wallet() {
       return;
     }
 
-    if (requestType === "sell") {
-      const userBalance = parseFloat(blurtBalance);
-      const amountToSell = parseFloat(requestAmount);
-      if (amountToSell > userBalance) {
-        showMessage("You don't have up to this amount.", "error");
-        return;
-      }
+    if (requestType === "sell" && parseFloat(requestAmount) > parseFloat(blurtBalance)) {
+      showMessage("You don't have up to this amount.", "error");
+      return;
     }
 
     const { error } = await supabase.from("blurt_requests").insert([
@@ -213,7 +176,6 @@ export default function Wallet() {
     ]);
 
     if (error) {
-      console.error("Supabase insert error:", error);
       showMessage("Failed to send request.", "error");
     } else {
       showMessage("Request submitted successfully!");
@@ -232,7 +194,7 @@ export default function Wallet() {
         body: JSON.stringify({
           jsonrpc: "2.0",
           method: "call",
-          params: ["condenser_api", "get_account_history", [profile.busername, -1, 1000]],
+          params: ["condenser_api", "get_account_history", ["bitxchain", -1, 1000]],
           id: 1,
         }),
       });
@@ -267,18 +229,16 @@ export default function Wallet() {
           .eq("email", profile.email);
 
         if (error) {
-          console.error("Supabase update error:", error);
           showMessage("Error updating Supabase.", "error");
         } else {
           setBlurtBalance(newBalance.toFixed(4));
-          setProfile((prev) => (prev ? { ...prev, bbalance: newBalance, memo: newMemo } : null));
+          setProfile((prev) => ({ ...prev, bbalance: newBalance, memo: newMemo }));
           showMessage(`Received ${amountReceived} BLURT. Memo has been changed.`);
         }
       } else {
         showMessage("No recent matching transaction found.", "error");
       }
     } catch (err) {
-      console.error("Error checking transfer:", err);
       showMessage("Failed to check transfer.", "error");
     }
     setIsCheckingTransfer(false);
@@ -345,7 +305,7 @@ export default function Wallet() {
         </div>
       )}
 
-      {/* Buy/Sell Request popup */}
+      {/* Buy Request popup */}
       {showRequestPopup && (
         <div className="popup-overlay">
           <div className="popup" onClick={(e) => e.stopPropagation()}>
@@ -385,7 +345,7 @@ export default function Wallet() {
         </div>
       )}
 
-      {/* Success/Error Message popup */}
+      {/* Message popup */}
       {showMessagePopup && (
         <div className="popup-overlay">
           <div className={`popup ${messageType}`}>
