@@ -69,6 +69,7 @@ export default function Wallet() {
   };
 
   const handleBuyBlurt = async (amountStr) => {
+    console.log("Clicked Buy with amount:", amountStr); 
     const amt = parseFloat(amountStr);
     if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
@@ -98,6 +99,7 @@ export default function Wallet() {
   };
 
   const handleSellBlurt = async (amountStr) => {
+    console.log("Clicked Buy with amount:", amountStr); 
     const amt = parseFloat(amountStr);
     if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
