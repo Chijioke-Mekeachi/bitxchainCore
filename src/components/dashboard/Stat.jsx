@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Select from 'react-select';
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
@@ -9,60 +8,18 @@ import './Dashboard.css';
 ChartJS.register(...registerables);
 
 function Stat() {
-  const [coinList, setCoinList] = useState([]);
-  const [currencyList, setCurrencyList] = useState([]);
-  const [selectedCoin, setSelectedCoin] = useState({ value: 'bitcoin', label: 'Bitcoin (BTC)' });
+  const selectedCoin = { value: 'blurt', label: 'Blurt (BLURT)' };
   const [selectedCurrency, setSelectedCurrency] = useState({ value: 'usd', label: 'USD' });
   const [selectedTimeRange, setSelectedTimeRange] = useState('7');
   const [priceHistory, setPriceHistory] = useState([]);
   const [convertedPrice, setConvertedPrice] = useState(null);
   const [conversionError, setConversionError] = useState(null);
 
-  // Fetch coin list
+  // Fetch historical data
   useEffect(() => {
-    axios.get('https://api.coingecko.com/api/v3/coins/markets', {
-      params: {
-        vs_currency: 'usd',
-        order: 'market_cap_desc',
-        per_page: 250,
-        page: 1,
-      }
-    })
-    .then(response => {
-      const formatted = response.data.map(coin => ({
-        value: coin.id,
-        label: `${coin.name} (${coin.symbol.toUpperCase()})`,
-      }));
-      const missingTokens = [
-        { value: 'blurt', label: 'Blurt (BLURT)' },
-        { value: 'steem', label: 'Steemit (STEEM)' },
-        { value: 'hive', label: 'Hive (HIVE)' },
-      ];
-      setCoinList([...formatted, ...missingTokens]);
-    })
-    .catch(error => console.error("Error fetching coins:", error));
-  }, []);
-
-  // Fetch currency list
-  useEffect(() => {
-    axios.get('https://api.coingecko.com/api/v3/simple/supported_vs_currencies')
-      .then(response => {
-        const options = response.data.map(curr => ({
-          value: curr,
-          label: curr.toUpperCase(),
-        }));
-        setCurrencyList(options);
-      })
-      .catch(error => console.error("Error fetching fiat currencies:", error));
-  }, []);
-
-  // Fetch price history
-  useEffect(() => {
-    if (!selectedCoin?.value || !selectedTimeRange) return;
-
     axios.get(`https://api.coingecko.com/api/v3/coins/${selectedCoin.value}/market_chart`, {
       params: {
-        vs_currency: 'usd',
+        vs_currency: selectedCurrency.value,
         days: selectedTimeRange,
       }
     })
@@ -74,18 +31,16 @@ function Stat() {
       setPriceHistory(data);
     })
     .catch(error => console.error("Error fetching historical data: ", error));
-  }, [selectedCoin, selectedTimeRange]);
+  }, [selectedCurrency, selectedTimeRange]);
 
-  // Fetch live price in selected currency (only CoinGecko)
+  // Fetch current price
   useEffect(() => {
-    if (!selectedCoin?.value || !selectedCurrency?.value) return;
-
     const fetchPrice = async () => {
       try {
         const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
           params: {
             ids: selectedCoin.value,
-            vs_currencies: selectedCurrency.value,
+            vs_currencies: `${selectedCurrency.value}`,
           }
         });
 
@@ -105,13 +60,12 @@ function Stat() {
     };
 
     fetchPrice();
-  }, [selectedCoin, selectedCurrency]);
+  }, [selectedCurrency]);
 
-  // Chart config
   const chartData = {
     datasets: [
       {
-        label: `${selectedCoin.label} Price (USD)`,
+        label: `Blurt (BLURT) Price in ${selectedCurrency.label}`,
         data: priceHistory,
         borderColor: 'rgba(0, 123, 255, 1)',
         backgroundColor: 'rgba(0, 123, 255, 0.3)',
@@ -132,7 +86,7 @@ function Stat() {
           label: function (tooltipItem) {
             const date = tooltipItem.raw.x;
             const price = tooltipItem.raw.y;
-            return `Price: ${price.toFixed(2)} USD on ${date.toLocaleString()}`;
+            return `Price: ${price.toFixed(2)} ${selectedCurrency.label} on ${date.toLocaleString()}`;
           },
         },
       },
@@ -152,7 +106,7 @@ function Stat() {
       y: {
         title: {
           display: true,
-          text: 'Price (USD)',
+          text: `Price (${selectedCurrency.label})`,
         },
         ticks: {
           beginAtZero: false,
@@ -161,64 +115,26 @@ function Stat() {
     },
   };
 
-  const customSelectStyles = {
-    control: (base) => ({
-      ...base,
-      backgroundColor: '#333',
-      borderColor: '#555',
-      color: '#fff',
-    }),
-    menu: (base) => ({
-      ...base,
-      backgroundColor: '#333',
-      color: '#fff',
-    }),
-    option: (base, { isFocused, isSelected }) => ({
-      ...base,
-      backgroundColor: isFocused ? '#555' : isSelected ? '#444' : '#333',
-      color: '#fff',
-    }),
-    singleValue: (base) => ({
-      ...base,
-      color: '#fff',
-    }),
-    input: (base) => ({
-      ...base,
-      color: '#fff',
-    }),
-    placeholder: (base) => ({
-      ...base,
-      color: '#aaa',
-    }),
-  };
-
   return (
     <div className="dashboard-container1">
-      <h1 className="dashboard-title">Crypto Exchange Dashboard</h1>
+      <h1 className="dashboard-title">Blurt (BLURT) Price Tracker</h1>
 
       <div className="select-section">
         <div className="select-box">
-          <label>Select Cryptocurrency</label>
-          <Select
-            options={coinList}
-            value={selectedCoin}
-            onChange={setSelectedCoin}
-            placeholder="Choose coin..."
-            isSearchable
-            styles={customSelectStyles}
-          />
-        </div>
-
-        <div className="select-box">
           <label>Select Currency</label>
-          <Select
-            options={currencyList}
-            value={selectedCurrency}
-            onChange={setSelectedCurrency}
-            placeholder="Choose currency..."
-            isSearchable
-            styles={customSelectStyles}
-          />
+          <select
+            value={selectedCurrency.value}
+            onChange={(e) => {
+              const selected = e.target.value === 'usd'
+                ? { value: 'usd', label: 'USD' }
+                : { value: 'ngn', label: 'NGN' };
+              setSelectedCurrency(selected);
+            }}
+            className="dropdown"
+          >
+            <option value="usd">USD</option>
+            <option value="ngn">NGN</option>
+          </select>
         </div>
 
         <div className="select-box">
@@ -239,12 +155,12 @@ function Stat() {
       </div>
 
       <div className="price-display">
-        <h2>{selectedCoin.label} in {selectedCurrency.label}</h2>
+        <h2>1 BLURT in {selectedCurrency.label}</h2>
         {conversionError ? (
           <p style={{ color: 'red' }}>{conversionError}</p>
         ) : convertedPrice !== null ? (
           <p>
-            1 {selectedCoin.label.split(' ')[0]} = {convertedPrice.toLocaleString(undefined, {
+            = {convertedPrice.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })} {selectedCurrency.label}
