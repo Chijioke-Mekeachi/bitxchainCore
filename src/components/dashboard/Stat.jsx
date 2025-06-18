@@ -161,8 +161,8 @@ function Stat() {
         ) : convertedPrice !== null ? (
           <p>
             = {convertedPrice.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
+              minimumFractionDigits: 4,
+              maximumFractionDigits: 4,
             })} {selectedCurrency.label}
           </p>
         ) : (
