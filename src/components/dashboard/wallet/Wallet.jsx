@@ -67,96 +67,64 @@ export default function Wallet() {
       setShowMessagePopup(false);
     }, 3000);
   };
-const handleSellBlurt = async (amountStr) => {
-  const amt = parseFloat(amountStr);
-  if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
-
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-  if (authError || !authUser) return showMessage("User not authenticated.", "error");
-
-  const { data: user, error: fetchError } = await supabase
-    .from('users')
-    .select('bbalance, balance')
-    .eq('email', authUser.email)
-    .single();
-
-  if (fetchError) return showMessage("Failed to fetch balances.", "error");
-
-  const currentBlurtBalance = parseFloat(user.bbalance);
-  const currentNairaBalance = parseFloat(user.balance);
-  if (currentBlurtBalance < amt) return showMessage("Insufficient Blurt balance.", "error");
-
-  const rate = parseFloat(blurtRate);
-  if (isNaN(rate) || rate <= 0) return showMessage("Invalid Blurt rate.", "error");
-
-  const nairaValue = rate * amt;
-  const nairaAfterFee = nairaValue * 0.97; // subtract 3% fee
-  const newNairaBalance = currentNairaBalance + nairaAfterFee;
-  const newBlurtBalance = currentBlurtBalance - amt;
-
-  const { error: updateError } = await supabase
-    .from('users')
-    .update({ balance: newNairaBalance, bbalance: newBlurtBalance })
-    .eq('email', authUser.email);
-
-  if (updateError) {
-    showMessage("Failed to update balances.", "error");
-  } else {
-    setBlurtBalance(newBlurtBalance.toFixed(4));
-    setNairaBalance(newNairaBalance.toFixed(2));
-    setProfile(prev => prev ? { ...prev, bbalance: newBlurtBalance, balance: newNairaBalance } : null);
-    showMessage(`Sold ${amt} BLURT for ₦${nairaAfterFee.toFixed(2)} \n(Charge: 3% fee)`, 'success');
-    setShowSellPopup(false);
-    setRequestAmount("");
-  }
-};
 
   const handleBuyBlurt = async (amountStr) => {
-  const amt = parseFloat(amountStr);
-  if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
+    const amt = parseFloat(amountStr);
+    if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-  if (authError || !authUser) return showMessage("User not authenticated.", "error");
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) return showMessage("User not authenticated.", "error");
 
-  const { data: user, error: fetchError } = await supabase
-    .from("users")
-    .select("bbalance, balance")
-    .eq("email", authUser.email)
-    .single();
+    const response = await fetch("https://xbifbtbouraistmakxwj.supabase.co/functions/v1/trade-blurt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: authUser.email,
+        action: "buy",
+        amount: amt,
+        rate: blurtRate,
+      }),
+    });
 
-  if (fetchError) return showMessage("Failed to fetch balances.", "error");
+    const result = await response.json();
+    if (result.error) {
+      showMessage(result.error, "error");
+    } else {
+      await fetchUserProfile();
+      showMessage(`Bought BLURT worth ₦${amt.toFixed(2)} (3% fee applied).`, "success");
+      setShowRequestPopup(false);
+      setRequestAmount("");
+    }
+  };
 
-  const currentBlurtBalance = parseFloat(user.bbalance);
-  const currentNairaBalance = parseFloat(user.balance);
+  const handleSellBlurt = async (amountStr) => {
+    const amt = parseFloat(amountStr);
+    if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
-  if (currentNairaBalance < amt) return showMessage("Insufficient Naira balance.", "error");
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) return showMessage("User not authenticated.", "error");
 
-  const rate = parseFloat(blurtRate);
-  if (isNaN(rate) || rate <= 0) return showMessage("Invalid Blurt rate.", "error");
+    const response = await fetch("https://xbifbtbouraistmakxwj.supabase.co/functions/v1/trade-blurt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: authUser.email,
+        action: "sell",
+        amount: amt,
+        rate: blurtRate,
+      }),
+    });
 
-  const blurtValue = amt / rate;
-  const blurtAfterFee = blurtValue * 0.97; // deduct 3%
-
-  const newBlurtBalance = currentBlurtBalance + blurtAfterFee;
-  const newNairaBalance = currentNairaBalance - amt;
-
-  const { error: updateError } = await supabase
-    .from("users")
-    .update({ balance: newNairaBalance, bbalance: newBlurtBalance })
-    .eq("email", authUser.email);
-
-  if (updateError) {
-    showMessage("Failed to update balances.", "error");
-  } else {
-    setBlurtBalance(newBlurtBalance.toFixed(4));
-    setNairaBalance(newNairaBalance.toFixed(2));
-    setProfile(prev => prev ? { ...prev, bbalance: newBlurtBalance, balance: newNairaBalance } : null);
-    showMessage(`Bought ${blurtAfterFee.toFixed(4)} BLURT (after 3% fee)`, "success");
-    setShowRequestPopup(false);
-    setRequestAmount("");
-  }
-};
-
+    const result = await response.json();
+    if (result.error) {
+      showMessage(result.error, "error");
+    } else {
+      await fetchUserProfile();
+      showMessage(`Sold ${amt} BLURT (3% fee applied).`, "success");
+      setShowSellPopup(false);
+      setRequestAmount("");
+    }
+  };
 
   const updateBlurtBalance = async () => {
     if (!popupUsername) return showMessage("Please enter your Blurt username.", "error");
@@ -191,45 +159,6 @@ const handleSellBlurt = async (amountStr) => {
       showMessage("Failed to fetch Blurt balance.", "error");
     } finally {
       setShowPopup(false);
-    }
-  };
-
-  const handleBlurtRequest = (type) => {
-    setRequestType(type);
-    setShowRequestPopup(true);
-    setRequestAmount("");
-  };
-
-  const sendRequestToSupabase = async () => {
-    if (!requestAmount || isNaN(requestAmount)) {
-      showMessage("Please enter a valid amount.", "error");
-      return;
-    }
-
-    if (requestType === "sell" && parseFloat(requestAmount) > parseFloat(blurtBalance)) {
-      showMessage("You don't have up to this amount.", "error");
-      return;
-    }
-
-    const { error } = await supabase.from("blurt_requests").insert([
-      {
-        user_id: profile.id,
-        username: profile.username,
-        busername: profile.busername,
-        email: profile.email,
-        request_type: requestType.toUpperCase(),
-        amount: parseFloat(requestAmount),
-        memo: profile.memo,
-      },
-    ]);
-
-    if (error) {
-      showMessage("Failed to send request.", "error");
-    } else {
-      showMessage("Request submitted successfully!");
-      setShowRequestPopup(false);
-      setShowSellPopup(false);
-      setRequestAmount("");
     }
   };
 
@@ -366,7 +295,7 @@ const handleSellBlurt = async (amountStr) => {
               className="popup-input"
             />
             <div className="popup-buttons">
-              <button className="btn" onClick={() => {handleBuyBlurt(requestAmount)}}>Send Request</button>
+              <button className="btn" onClick={() => handleBuyBlurt(requestAmount)}>Send Request</button>
               <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
             </div>
           </div>
