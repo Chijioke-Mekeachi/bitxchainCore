@@ -156,83 +156,75 @@ export default function Wallet() {
     const amt = parseFloat(amountStr);
     if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-    if (authError || !authUser) return showMessage("User not authenticated.", "error");
-
     try {
-      const response = await fetch("http://localhost:5000/api/buy-blurt", {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return showMessage("User not authenticated.", "error");
+
+      const response = await fetch("https://bitapi-0m8c.onrender.com/api/buy-blurt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: authUser.email,
-          amount: amt,
-        }),
+        body: JSON.stringify({ email: user.email, amount: amt }),
       });
 
       const result = await response.json();
-
       if (!response.ok) {
-        return showMessage(result.message || "Failed to buy Blurt.", "error");
+        console.error("Buy error:", result.error);
+        return showMessage(result.error || "Failed to buy Blurt", "error");
       }
 
-      setBlurtBalance(parseFloat(result.newBlurtBalance).toFixed(4));
-      setNairaBalance(parseFloat(result.newNairaBalance).toFixed(2));
+      setBlurtBalance(result.newBlurtBalance.toFixed(4));
+      setNairaBalance(result.newNairaBalance.toFixed(2));
       setProfile((prev) => ({
         ...prev,
         bbalance: result.newBlurtBalance,
         balance: result.newNairaBalance,
       }));
-
-      showMessage(`Bought ${amt} BLURT successfully!`);
+      showMessage("Buy successful!", "success");
       setShowRequestPopup(false);
       setRequestAmount("");
     } catch (err) {
-      console.error("Error buying Blurt:", err);
-      showMessage("Server error during transaction.", "error");
+      console.error("Buy request failed:", err);
+      showMessage("Unexpected error occurred.", "error");
     }
   };
-
 
 
   const handleSellBlurt = async (amountStr) => {
     const amt = parseFloat(amountStr);
     if (isNaN(amt) || amt <= 0) return showMessage("Invalid amount.", "error");
 
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-    if (authError || !authUser) return showMessage("User not authenticated.", "error");
-
     try {
-      const response = await fetch("http://localhost:5000/api/sell-blurt", {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return showMessage("User not authenticated.", "error");
+
+      const response = await fetch("https://bitapi-0m8c.onrender.com/api/sell-blurt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: authUser.email,
-          amount: amt,
-        }),
+        body: JSON.stringify({ email: user.email, amount: amt }),
       });
 
       const result = await response.json();
-
       if (!response.ok) {
-        return showMessage(result.message || "Failed to sell Blurt.", "error");
+        console.error("Sell error:", result.error);
+        return showMessage(result.error || "Failed to sell Blurt", "error");
       }
 
-      setBlurtBalance(parseFloat(result.newBlurtBalance).toFixed(4));
-      setNairaBalance(parseFloat(result.newNairaBalance).toFixed(2));
+      setBlurtBalance(result.newBlurtBalance.toFixed(4));
+      setNairaBalance(result.newNairaBalance.toFixed(2));
       setProfile((prev) => ({
         ...prev,
         bbalance: result.newBlurtBalance,
         balance: result.newNairaBalance,
       }));
-
-      showMessage(`Sold ${amt} BLURT successfully!`);
+      showMessage("Sell successful!", "success");
       setShowSellPopup(false);
       setRequestAmount("");
     } catch (err) {
-      console.error("Error selling Blurt:", err);
-      showMessage("Server error during transaction.", "error");
+      console.error("Sell request failed:", err);
+      showMessage("Unexpected error occurred.", "error");
     }
   };
+
 
 
   const updateBlurtBalance = async () => {
