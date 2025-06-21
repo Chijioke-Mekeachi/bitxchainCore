@@ -36,24 +36,6 @@ export default function MyWithdrawRequests() {
     setLoading(false);
   };
 
-  const handleDelete = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this request?");
-    if (!confirm) return;
-
-    const { error } = await supabase
-      .from("withdraw_requests")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Delete error:", error);
-      return;
-    }
-
-    setRequests((prev) => prev.filter((req) => req.id !== id));
-    setSelectedRequest(null);
-  };
-
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -109,7 +91,6 @@ export default function MyWithdrawRequests() {
             <p><strong>Date:</strong> {new Date(selectedRequest.created_at).toLocaleString()}</p>
 
             <div className="btn-holder">
-              <button className="btn red" onClick={() => handleDelete(selectedRequest.id)}>🗑 Delete</button>
               <button className="close-button" onClick={() => setSelectedRequest(null)}>Close</button>
             </div>
           </div>
