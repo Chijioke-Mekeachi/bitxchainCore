@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './BlogPost.css';
 
-const BlogPost = ({ image = null }) => {
-  const [showImage, setShowImage] = useState(false);
-
-  useEffect(() => {
-    if (image) {
-      setShowImage(true);
-    }
-  }, [image]);
+const BlogPost = ({ post }) => {
+  const profileImage = post?.profileImage || `https://images.blurt.world/u/${post?.author}/avatar`;
 
   const handleClick = () => {
-    window.location.href = 'http://localhost:5173';
+    if (post) {
+      window.open(`https://blurt.blog/@${post.author}/${post.permlink}`, "_blank");
+    }
   };
 
   return (
@@ -19,24 +15,21 @@ const BlogPost = ({ image = null }) => {
       <div className="main">
         <div className="top">
           <div className="profilePhoto">
-            <img src="" alt="Profile" />
+            <img src={profileImage} alt="Profile" />
           </div>
-          <div className="date">Tue-3rd-2025</div>
+          <div className="date">{post?.created?.substring(0, 10)}</div>
         </div>
 
         <div className="body">
-          <div className="title">First blog</div>
+          <div className="title">{post?.title || "Loading title..."}</div>
           <div className="main-body">
-            {showImage && (
-              <div className='image-data'>
-                <img src={image} alt="Blog visual" />
-              </div>
+            {post?.body ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: post.body }}
+              />
+            ) : (
+              <p>Loading blog content...</p>
             )}
-            <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Amet sequi natus et quia perferendis? 
-              Fugiat accusamus tempore exercitationem magnam laudantium in atque nihil, ullam esse omnis 
-              velit ipsam possimus vitae?
-            </p>
           </div>
         </div>
 
