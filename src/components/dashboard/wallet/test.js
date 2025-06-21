@@ -44,3 +44,39 @@ const handleBuyBlurt = async (amountStr) => {
 // this is the past you telling you this 
 // so test it 
 // not really sure what i did bu tit's fine 
+
+
+//fetching bank names 
+const [banks, setBanks] = useState([]);
+
+  useEffect(() => {
+    fetch("https://bitapi-0m8c.onrender.com/api/banks")
+      .then((res) => res.json())
+      .then(setBanks)
+      .catch(console.error);
+  }, []);
+
+  // Auto-resolve account name when valid bank and 10-digit account number entered
+  useEffect(() => {
+    const selectedBank = banks.find(
+      (bank) =>
+        bank.name.toLowerCase() === withdrawBankName.toLowerCase() ||
+        bank.code === withdrawBankName
+    );
+
+    if (selectedBank && withdrawAccountNumber.length === 10) {
+      fetch(`https://bitapi-0m8c.onrender.com/api/resolve-account?account_number=${acc}&bank_code=${code}`)
+
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status) {
+            setWithdrawBankUsername(data.data.account_name);
+          } else {
+            setWithdrawBankUsername("Account not found");
+          }
+        })
+        .catch(() => setWithdrawBankUsername("Lookup failed"));
+    } else {
+      setWithdrawBankUsername("");
+    }
+  }, [withdrawAccountNumber, withdrawBankName, banks]);
