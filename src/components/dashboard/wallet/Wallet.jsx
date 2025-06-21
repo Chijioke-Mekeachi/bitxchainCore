@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./wallet.css";
 import { supabase } from "../../../lib/supabase";
+import MyWithdrawRequests from "./Withdraw";
 
 export default function Wallet() {
   const [profile, setProfile] = useState(null);
@@ -234,49 +235,49 @@ export default function Wallet() {
   };
 
   const handleWithdraw = async () => {
-  if (
-    !withdrawAmount ||
-    !withdrawBankName ||
-    !withdrawBankUsername ||
-    !withdrawAccountNumber
-  ) {
-    return showMessage("Please fill all fields.", "error");
-  }
+    if (
+      !withdrawAmount ||
+      !withdrawBankName ||
+      !withdrawBankUsername ||
+      !withdrawAccountNumber
+    ) {
+      return showMessage("Please fill all fields.", "error");
+    }
 
-  setLoadingWithdraw(true);
-  try {
-    // Example logic: send to Supabase or your backend
-    const { data: { user } } = await supabase.auth.getUser();
+    setLoadingWithdraw(true);
+    try {
+      // Example logic: send to Supabase or your backend
+      const { data: { user } } = await supabase.auth.getUser();
 
-    const { error } = await supabase
-      .from("withdraw_requests")
-      .insert([
-        {
-          email: user.email,
-          amount: parseFloat(withdrawAmount),
-          bank_name: withdrawBankName,
-          bank_username: withdrawBankUsername,
-          account_number: withdrawAccountNumber,
-        },
-      ]);
+      const { error } = await supabase
+        .from("withdraw_requests")
+        .insert([
+          {
+            email: user.email,
+            amount: parseFloat(withdrawAmount),
+            bank_name: withdrawBankName,
+            bank_username: withdrawBankUsername,
+            account_number: withdrawAccountNumber,
+          },
+        ]);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    showMessage("Withdraw request submitted successfully!", "success");
+      showMessage("Withdraw request submitted successfully!", "success");
 
-    // Reset form
-    setWithdrawAmount("");
-    setWithdrawBankName("");
-    setWithdrawBankUsername("");
-    setWithdrawAccountNumber("");
-    setShowWithdraw(false);
-  } catch (error) {
-    console.error(error);
-    showMessage("Error submitting request", "error");
-  } finally {
-    setLoadingWithdraw(false);
-  }
-};
+      // Reset form
+      setWithdrawAmount("");
+      setWithdrawBankName("");
+      setWithdrawBankUsername("");
+      setWithdrawAccountNumber("");
+      setShowWithdraw(false);
+    } catch (error) {
+      console.error(error);
+      showMessage("Error submitting request", "error");
+    } finally {
+      setLoadingWithdraw(false);
+    }
+  };
 
 
   const handleTransferConfirmation = async () => {
@@ -375,125 +376,139 @@ export default function Wallet() {
             <button className="btn yellow" onClick={() => { setRequestType("sell"); setShowSellPopup(true); setRequestAmount(""); }}>💵 Sell Blurt</button>
           </div>
         </div>
+        <div className="recent-box">
+          <h2 className="recent-header">📄 Recent Requests</h2>
+          <MyWithdrawRequests />
+        </div>
       </div>
 
-      {/* Add Fund popup */}
-      {showPopup && (
-        <div className="popup-overlay" onClick={() => setShowPopup(false)}>
-          <div className="popup" onClick={(e) => e.stopPropagation()}>
-            <h3>Update Blurt Balance</h3>
-            <input
-              type="text"
-              placeholder="Blurt Username"
-              value={popupUsername}
-              onChange={(e) => setPopupUsername(e.target.value)}
-              className="popup-input"
-            />
-            <div className="popup-buttons">
-              <button className="btn" onClick={updateBlurtBalance}>
-                {loadingUpdate ? "Updating..." : "Update Balance"}
-              </button>
-              <button className="btn cancel" onClick={() => setShowPopup(false)}>Cancel</button>
-            </div>
+      {/* Add Fund popup */ }
+  {
+    showPopup && (
+      <div className="popup-overlay" onClick={() => setShowPopup(false)}>
+        <div className="popup" onClick={(e) => e.stopPropagation()}>
+          <h3>Update Blurt Balance</h3>
+          <input
+            type="text"
+            placeholder="Blurt Username"
+            value={popupUsername}
+            onChange={(e) => setPopupUsername(e.target.value)}
+            className="popup-input"
+          />
+          <div className="popup-buttons">
+            <button className="btn" onClick={updateBlurtBalance}>
+              {loadingUpdate ? "Updating..." : "Update Balance"}
+            </button>
+            <button className="btn cancel" onClick={() => setShowPopup(false)}>Cancel</button>
           </div>
         </div>
-      )}
-      {showWithdraw && (
-        <div className="popup-overlay" onClick={() => setShowWithdraw(false)}>
-          <div className="popup" onClick={(e) => e.stopPropagation()}>
-            <h3>Withdraw Funds</h3>
-            <input
-              type="number"
-              placeholder="Amount to Withdraw"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(e.target.value)}
-              className="popup-input"
-            />
-            <input
-              type="text"
-              placeholder="Bank Name (e.g., Access Bank)"
-              value={withdrawBankName}
-              onChange={(e) => setWithdrawBankName(e.target.value)}
-              className="popup-input"
-            />
-            <input
-              type="text"
-              placeholder="Account Holder Name"
-              value={withdrawBankUsername}
-              onChange={(e) => setWithdrawBankUsername(e.target.value)}
-              className="popup-input"
-            />
-            <input
-              type="text"
-              placeholder="Account Number"
-              value={withdrawAccountNumber}
-              onChange={(e) => setWithdrawAccountNumber(e.target.value)}
-              className="popup-input"
-            />
-            <div className="popup-buttons">
-              <button className="btn" onClick={handleWithdraw}>
-                {loadingWithdraw ? "Submitting..." : "Submit Withdraw"}
-              </button>
-              <button className="btn cancel" onClick={() => setShowWithdraw(false)}>Cancel</button>
-            </div>
+      </div>
+    )
+  }
+  {
+    showWithdraw && (
+      <div className="popup-overlay" onClick={() => setShowWithdraw(false)}>
+        <div className="popup" onClick={(e) => e.stopPropagation()}>
+          <h3>Withdraw Funds</h3>
+          <input
+            type="number"
+            placeholder="Amount to Withdraw"
+            value={withdrawAmount}
+            onChange={(e) => setWithdrawAmount(e.target.value)}
+            className="popup-input"
+          />
+          <input
+            type="text"
+            placeholder="Bank Name (e.g., Access Bank)"
+            value={withdrawBankName}
+            onChange={(e) => setWithdrawBankName(e.target.value)}
+            className="popup-input"
+          />
+          <input
+            type="text"
+            placeholder="Account Holder Name"
+            value={withdrawBankUsername}
+            onChange={(e) => setWithdrawBankUsername(e.target.value)}
+            className="popup-input"
+          />
+          <input
+            type="text"
+            placeholder="Account Number"
+            value={withdrawAccountNumber}
+            onChange={(e) => setWithdrawAccountNumber(e.target.value)}
+            className="popup-input"
+          />
+          <div className="popup-buttons">
+            <button className="btn" onClick={handleWithdraw}>
+              {loadingWithdraw ? "Submitting..." : "Submit Withdraw"}
+            </button>
+            <button className="btn cancel" onClick={() => setShowWithdraw(false)}>Cancel</button>
           </div>
         </div>
-      )}
+      </div>
+    )
+  }
 
 
-      {/* Buy Request popup */}
-      {showRequestPopup && (
-        <div className="popup-overlay">
-          <div className="popup" onClick={(e) => e.stopPropagation()}>
-            <h3>{requestType.toUpperCase()} BLURT</h3>
-            <input
-              type="number"
-              placeholder="Enter amount of blurt "
-              value={requestAmount}
-              onChange={(e) => setRequestAmount(e.target.value)}
-              className="popup-input"
-            />
-            <div className="popup-buttons">
-              <button className="btn" onClick={() => handleBuyBlurt(requestAmount)}>
-                {loadingBuy ? "Processing..." : "Send Request"}
-              </button>
-              <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
-            </div>
+  {/* Buy Request popup */ }
+  {
+    showRequestPopup && (
+      <div className="popup-overlay">
+        <div className="popup" onClick={(e) => e.stopPropagation()}>
+          <h3>{requestType.toUpperCase()} BLURT</h3>
+          <input
+            type="number"
+            placeholder="Enter amount of blurt "
+            value={requestAmount}
+            onChange={(e) => setRequestAmount(e.target.value)}
+            className="popup-input"
+          />
+          <div className="popup-buttons">
+            <button className="btn" onClick={() => handleBuyBlurt(requestAmount)}>
+              {loadingBuy ? "Processing..." : "Send Request"}
+            </button>
+            <button className="btn cancel" onClick={() => setShowRequestPopup(false)}>Cancel</button>
           </div>
         </div>
-      )}
+      </div>
+    )
+  }
 
-      {/* Sell Request popup */}
-      {showSellPopup && (
-        <div className="popup-overlay">
-          <div className="popup" onClick={(e) => e.stopPropagation()}>
-            <h3>SELL BLURT</h3>
-            <input
-              type="number"
-              placeholder="Enter amount of blurt"
-              value={requestAmount}
-              onChange={(e) => setRequestAmount(e.target.value)}
-              className="popup-input"
-            />
-            <div className="popup-buttons">
-              <button className="btn" onClick={() => handleSellBlurt(requestAmount)}>
-                {loadingSell ? "Processing..." : "Send Request"}
-              </button>
-              <button className="btn cancel" onClick={() => setShowSellPopup(false)}>Cancel</button>
-            </div>
+  {/* Sell Request popup */ }
+  {
+    showSellPopup && (
+      <div className="popup-overlay">
+        <div className="popup" onClick={(e) => e.stopPropagation()}>
+          <h3>SELL BLURT</h3>
+          <input
+            type="number"
+            placeholder="Enter amount of blurt"
+            value={requestAmount}
+            onChange={(e) => setRequestAmount(e.target.value)}
+            className="popup-input"
+          />
+          <div className="popup-buttons">
+            <button className="btn" onClick={() => handleSellBlurt(requestAmount)}>
+              {loadingSell ? "Processing..." : "Send Request"}
+            </button>
+            <button className="btn cancel" onClick={() => setShowSellPopup(false)}>Cancel</button>
           </div>
         </div>
-      )}
+      </div>
+    )
+  }
 
 
-      {/* Message popup */}
-      {showMessagePopup && (
-        <div className="popup-overlay">
-          <div className={`popup ${messageType}`}>
-            <h3>{messageType === "success" ? "✅" : "❌"} {message}</h3>
-          </div>
+  {/* Message popup */ }
+  {
+    showMessagePopup && (
+      <div className="popup-overlay">
+        <div className={`popup ${messageType}`}>
+          <h3>{messageType === "success" ? "✅" : "❌"} {message}</h3>
         </div>
-      )}
-    </div>
+      </div>
+    )
+  }
+    </div >
   );
 }
