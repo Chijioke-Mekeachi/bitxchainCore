@@ -120,6 +120,7 @@ export default function Buy(){
               placeholder="Pin"
               inputMode="numeric"
             />
+            
             <button className="purchase-btn">Proceed</button>
           </div>
         </div>

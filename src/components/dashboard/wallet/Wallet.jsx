@@ -21,6 +21,13 @@ export default function Wallet() {
   const [loadingSell, setLoadingSell] = useState(false);
   const [loadingRequest, setLoadingRequest] = useState(false);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawBankName, setWithdrawBankName] = useState("");
+  const [withdrawBankUsername, setWithdrawBankUsername] = useState("");
+  const [withdrawAccountNumber, setWithdrawAccountNumber] = useState("");
+  const [loadingWithdraw, setLoadingWithdraw] = useState(false);
+
 
   useEffect(() => {
     fetchBlurtRate();
@@ -226,6 +233,52 @@ export default function Wallet() {
     setLoadingUpdate(false);
   };
 
+  const handleWithdraw = async () => {
+  if (
+    !withdrawAmount ||
+    !withdrawBankName ||
+    !withdrawBankUsername ||
+    !withdrawAccountNumber
+  ) {
+    return showMessage("Please fill all fields.", "error");
+  }
+
+  setLoadingWithdraw(true);
+  try {
+    // Example logic: send to Supabase or your backend
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from("withdraw_requests")
+      .insert([
+        {
+          email: user.email,
+          amount: parseFloat(withdrawAmount),
+          bank_name: withdrawBankName,
+          bank_username: withdrawBankUsername,
+          account_number: withdrawAccountNumber,
+        },
+      ]);
+
+    if (error) throw error;
+
+    showMessage("Withdraw request submitted successfully!", "success");
+
+    // Reset form
+    setWithdrawAmount("");
+    setWithdrawBankName("");
+    setWithdrawBankUsername("");
+    setWithdrawAccountNumber("");
+    setShowWithdraw(false);
+  } catch (error) {
+    console.error(error);
+    showMessage("Error submitting request", "error");
+  } finally {
+    setLoadingWithdraw(false);
+  }
+};
+
+
   const handleTransferConfirmation = async () => {
     setIsCheckingTransfer(true);
     try {
@@ -299,11 +352,11 @@ export default function Wallet() {
           <div className="wallet-info">
             <div>
               <p className="big-text">{blurtBalance} BLURT</p>
-              <p className="small-text">1 BLURT ≈ ₦{blurtRate ?? "..."}</p>
+              <p className="small-text">1 BLURT ≈ ₦{(blurtRate - (blurtRate * 0.33)) ?? "..."}</p>
             </div>
             <div className="right-text">
               <p className="big-text">₦{nairaBalance}</p>
-              <button className="btn green">Withdraw</button>
+              <button className="btn green" onClick={() => { setShowWithdraw(true) }}>Withdraw</button>
             </div>
           </div>
 
@@ -345,6 +398,48 @@ export default function Wallet() {
           </div>
         </div>
       )}
+      {showWithdraw && (
+        <div className="popup-overlay" onClick={() => setShowWithdraw(false)}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <h3>Withdraw Funds</h3>
+            <input
+              type="number"
+              placeholder="Amount to Withdraw"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              className="popup-input"
+            />
+            <input
+              type="text"
+              placeholder="Bank Name (e.g., Access Bank)"
+              value={withdrawBankName}
+              onChange={(e) => setWithdrawBankName(e.target.value)}
+              className="popup-input"
+            />
+            <input
+              type="text"
+              placeholder="Account Holder Name"
+              value={withdrawBankUsername}
+              onChange={(e) => setWithdrawBankUsername(e.target.value)}
+              className="popup-input"
+            />
+            <input
+              type="text"
+              placeholder="Account Number"
+              value={withdrawAccountNumber}
+              onChange={(e) => setWithdrawAccountNumber(e.target.value)}
+              className="popup-input"
+            />
+            <div className="popup-buttons">
+              <button className="btn" onClick={handleWithdraw}>
+                {loadingWithdraw ? "Submitting..." : "Submit Withdraw"}
+              </button>
+              <button className="btn cancel" onClick={() => setShowWithdraw(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Buy Request popup */}
       {showRequestPopup && (
@@ -389,6 +484,7 @@ export default function Wallet() {
           </div>
         </div>
       )}
+
 
       {/* Message popup */}
       {showMessagePopup && (
