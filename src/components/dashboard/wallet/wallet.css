@@ -249,6 +249,7 @@
     flex-direction: column;
     text-align: center;
     gap: 10px;
+    width: 98%;
   }
 
   .btn-group {
@@ -297,5 +298,8 @@
 
   .btn-group {
     gap: 8px;
+  }
+  .wallet-info{
+    width: 98%;
   }
 }

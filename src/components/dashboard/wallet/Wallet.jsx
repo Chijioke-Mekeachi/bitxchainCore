@@ -51,7 +51,6 @@ export default function Wallet() {
       .select("*")
       .eq("email", userEmail)
       .single();
-
     if (error) {
       console.error("Failed to fetch user profile:", error);
       return;
@@ -299,61 +298,38 @@ export default function Wallet() {
 
 
   const handleTransferConfirmation = async () => {
-    setIsCheckingTransfer(true);
     try {
-      const response = await fetch("https://rpc.blurt.world", {
+      const response = await fetch("https://bitapi-0m8c.onrender.com/api/confirm-transfer", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          method: "call",
-          params: ["condenser_api", "get_account_history", ["bitxchain", -1, 1000]],
-          id: 1,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: profile.email }), // or however you access the logged-in user's email
       });
 
-      const json = await response.json();
-      const history = json.result;
+      const result = await response.json();
 
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-      const matchingTxs = history
-        .map(([, tx]) => tx)
-        .filter((tx) => {
-          const isTransfer = tx.op[0] === "transfer";
-          const matchesMemo = tx.op[1].memo === profile.memo;
-          const isToBitxchain = tx.op[1].to === "bitxchain";
-          const txTime = new Date(tx.timestamp + "Z");
-          return isTransfer && matchesMemo && isToBitxchain && txTime >= threeDaysAgo;
-        })
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-      if (matchingTxs.length > 0) {
-        const latestTx = matchingTxs[0];
-        const amountReceived = parseFloat(latestTx.op[1].amount.split(" ")[0]);
-        const newBalance = parseFloat(blurtBalance) + amountReceived;
-        const newMemo = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-        const { error } = await supabase
-          .from("users")
-          .update({ bbalance: newBalance, memo: newMemo })
-          .eq("email", profile.email);
-
-        if (error) {
-          showMessage("Error updating Supabase.", "error");
-        } else {
-          showMessage(`Received ${amountReceived} BLURT. Memo has been changed.`);
-          await fetchUserProfile();
-        }
-      } else {
-        showMessage("No recent matching transaction found.", "error");
+      if (!response.ok) {
+        showMessage(result.message || "Transfer confirmation failed.", "error");
+        return;
       }
-    } catch (err) {
-      showMessage("Failed to check transfer.", "error");
+
+      showMessage(result.message, "success");
+
+      // Optionally update local state/UI
+      if (result.newBlurtBalance) {
+        setBlurtBalance(result.newBlurtBalance);
+      }
+
+      // Optional: refresh user profile/memo
+      fetchUserProfile?.();
+
+    } catch (error) {
+      console.error("Error confirming transfer:", error);
+      showMessage("Error contacting the server.", "error");
     }
-    setIsCheckingTransfer(false);
   };
+
 
   if (!profile) return <div className="loading">Loading wallet...</div>;
 
@@ -371,7 +347,10 @@ export default function Wallet() {
           <div className="wallet-info">
             <div>
               <p className="big-text">{blurtBalance} BLURT</p>
-              <p className="small-text">1 BLURT ≈ ₦{(blurtRate - (blurtRate * 0.33)) ?? "..."}</p>
+              <p className="small-text">
+                1 BLURT ≈ ₦{blurtRate ? (blurtRate - blurtRate * 0.33).toFixed(2) : "..."}
+              </p>
+
             </div>
             <div className="right-text">
               <p className="big-text">₦{nairaBalance}</p>
@@ -389,7 +368,7 @@ export default function Wallet() {
           </div>
 
           <div className="btn-group">
-            <button className="btn blue" onClick={() => setShowPopup(true)}>💰 Add Fund</button>
+            <button className="btn blue" onClick={() => setShowPopup(true)}>Transfer Blurt</button>
             <button className="btn purple" onClick={() => handleBlurtRequest("buy")}>💱 Buy Blurt</button>
             <button className="btn yellow" onClick={() => { setRequestType("sell"); setShowSellPopup(true); setRequestAmount(""); }}>💵 Sell Blurt</button>
           </div>
