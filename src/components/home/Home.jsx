@@ -103,7 +103,7 @@ export const Home = () => {
             <a href="https://facebook.com" target="_blank"><img src={facebook} alt="Facebook" width={50} /></a>
             <a href="https://x.com/promoblurt" target="_blank"><img src={tweeter} alt="Twitter" width={50} /></a>
           </div>
-          <p>&copy; 2025 Powered by Anonymus Net</p>
+          <p>&copy; 2025 Powered by bitX Group</p>
         </footer>
       </div>
     </div>
