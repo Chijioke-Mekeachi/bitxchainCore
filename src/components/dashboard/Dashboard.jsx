@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [wallet, setWallet] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [blog, setBlog] = useState(true);
+  const [daysLeft, setDaysLeft] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -24,8 +25,8 @@ export default function Dashboard() {
 
       if (user) {
         const { data, error } = await supabase
-          .from('users') // replace with your actual table
-          .select('username') // assume you have a `username` column
+          .from('users')
+          .select('username')
           .eq('id', user.id)
           .single();
 
@@ -47,6 +48,24 @@ export default function Dashboard() {
       setIsLoggedIn(false);
     }, 1000);
   }, []);
+
+  // Countdown logic
+  useEffect(() => {
+  const launchDate = new Date("2025-08-20T00:00:00"); // Set testnet date
+
+  const updateCountdown = () => {
+    const now = new Date();
+    const timeDiff = launchDate - now;
+    const days = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+    setDaysLeft(days);
+  };
+
+  updateCountdown(); // initial call
+  const interval = setInterval(updateCountdown, 1000 * 60 * 60); // update every hour
+
+  return () => clearInterval(interval);
+}, []);
+
 
   const handle_stat = () => { setProfile(false); setBuy(false); setWallet(false); setMenuOpen(false); setBlog(false); };
   const handle_profile = () => { setProfile(true); setBuy(false); setWallet(false); setMenuOpen(false); setBlog(false); };
@@ -78,6 +97,11 @@ export default function Dashboard() {
         ) : (
           <div className="nothing"></div>
         )}
+      </div>
+
+      {/* ✅ Countdown Display */}
+      <div style={{ textAlign: 'center', marginTop: '10px', color: '#00ffcc', fontFamily: 'Orbitron, sans-serif', fontSize: '18px' }}>
+        🚀 Testnet launches in <strong>{daysLeft}</strong> day{daysLeft !== 1 ? 's' : ''}!
       </div>
 
       <div className="body">

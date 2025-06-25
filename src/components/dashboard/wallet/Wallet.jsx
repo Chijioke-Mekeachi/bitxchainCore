@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./wallet.css";
 import { supabase } from "../../../lib/supabase";
 import MyWithdrawRequests from "./Withdraw";
+import Stat from "../Stat";
 
 export default function Wallet() {
   const [profile, setProfile] = useState(null);
@@ -378,6 +379,7 @@ export default function Wallet() {
           <MyWithdrawRequests />
         </div>
       </div>
+      <Stat/>
 
       {/* Add Fund popup */}
       {

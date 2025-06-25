@@ -5,7 +5,6 @@ import keyIcon from '../../assets/key.svg';
 import emailIcon from '../../assets/email.svg';
 import icon2 from '../../assets/icon2.png';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 
 export const Signup = () => {
   const [show, setShow] = useState("password");
@@ -16,6 +15,7 @@ export const Signup = () => {
   const [busername, setBusername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -46,37 +46,19 @@ export const Signup = () => {
     }
 
     try {
-      // Create user with Supabase Auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username,
-            busername,
-          },
+      setLoading(true);
+      const response = await fetch("https://bitapi-0m8c.onrender.com/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ email, password, username, busername }),
       });
 
-      if (signUpError) {
-        return setError("Sign up failed: " + signUpError.message);
-      }
+      const data = await response.json();
 
-      // Insert into users table
-      const memo = `${Math.random().toString(36).substring(2, 10)}`;
-      const { error: insertError } = await supabase.from('users').insert([
-        {
-          username,
-          busername,
-          email,
-          memo,
-          balance: 0.00,
-          bbalance: 0.00,
-        },
-      ]);
-
-      if (insertError) {
-        return setError("Profile creation failed: " + insertError.message);
+      if (!response.ok) {
+        return setError(data.message || "Signup failed.");
       }
 
       alert("Account created successfully!");
@@ -86,7 +68,9 @@ export const Signup = () => {
       setBusername('');
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || "An unexpected error occurred.");
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,7 +119,7 @@ export const Signup = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button onClick={handleShowHide} className='pas-btn'>{toggleLabel}</button>
+          <button type="button" onClick={handleShowHide} className='pas-btn'>{toggleLabel}</button>
         </div>
       </div>
       {error && <div className="error-message">{error}</div>}
@@ -143,7 +127,9 @@ export const Signup = () => {
         Already Have an Account? <span onClick={goToSignIn} className="signin-link">Sign in</span>
       </div>
       <div className="button-container">
-        <div className="submit" onClick={handleSubmit}>Sign Up</div>
+        <div className="submit" onClick={!loading ? handleSubmit : null}>
+          {loading ? "Creating Account..." : "Sign Up"}
+        </div>
       </div>
     </div>
   );
