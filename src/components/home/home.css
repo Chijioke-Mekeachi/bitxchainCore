@@ -208,11 +208,12 @@ body {
 }
 
 .products {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  padding: 0 10px;
 }
+
 
 .product-card {
     background-color: #333;
@@ -236,6 +237,22 @@ body {
 
 .product-card p {
     font-size: 16px;
+}
+@media (max-width: 768px) {
+  .founder-card {
+    flex-direction: column;
+    padding: 0 20px;
+    gap: 40px;
+  }
+
+  .img-founder {
+    width: 100%;
+    height: auto;
+  }
+
+  .text-founder {
+    width: 100%;
+  }
 }
 
 /* Footer Section */
