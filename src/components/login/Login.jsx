@@ -4,7 +4,7 @@ import key from '../../assets/key.svg';
 import emailIcon from '../../assets/email.svg';
 import icon2 from '../../assets/icon2.png';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import axios from 'axios';
 
 export const LoginPage = () => {
   const [show, setShow] = useState("password");
@@ -36,32 +36,23 @@ export const LoginPage = () => {
     }
 
     setLoading(true);
-
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const response = await axios.post('https://bitapi-0m8c.onrender.com/api/login', {
         email,
         password,
       });
 
-      if (authError) throw authError;
+      const { user, token } = response.data;
 
-      // Fetch profile from your custom users table using email
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authData.user.email)
-        .single();
+      // Save profile and token
+      localStorage.setItem('userProfile', JSON.stringify(user));
+      localStorage.setItem('authToken', token);
 
-      if (profileError || !profile) {
-        return showTempMessage("User profile not found in database.", 'error');
-      }
-
-      localStorage.setItem('userProfile', JSON.stringify(profile));
       showTempMessage("Login successful!", 'success');
-
       setTimeout(() => navigate('/dashboard'), 1500);
-    } catch (error) {
-      showTempMessage("Login failed: " + error.message, 'error');
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || "Login failed.";
+      showTempMessage(errorMsg, 'error');
     } finally {
       setLoading(false);
     }

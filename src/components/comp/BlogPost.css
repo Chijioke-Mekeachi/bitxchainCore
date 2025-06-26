@@ -1,40 +1,48 @@
 * {
   box-sizing: border-box;
-  font-family: sans-serif;
+  font-family: 'Orbitron', sans-serif;
+}
+
+body {
+  background: #0d0d0d;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
 }
 
 .contain {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(90deg, red, orange 50%);
-  border-radius: 10px;
-  padding: 20px;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  border-radius: 12px;
+  padding: 24px;
   width: 60%;
-  margin: 20px auto;
+  margin: 24px auto;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.15), 0 0 24px rgba(0, 255, 255, 0.05);
 }
 
 .contain:hover {
-  transform: scale(1.02);
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.4), 0 0 36px rgba(0, 255, 255, 0.2);
 }
 
 .main {
   width: 100%;
-  background-color: #333;
-  border-radius: 10px;
+  background-color: #111827;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 0 10px #00000088;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
 .top {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  background-color: #444;
-  padding: 15px 20px;
-  border-radius: 10px 10px 0 0;
+  background: linear-gradient(to right, #1f1c2c, #928dab);
+  padding: 18px 24px;
+  border-radius: 12px 12px 0 0;
 }
 
 .profilePhoto img {
@@ -42,54 +50,79 @@
   height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid white;
+  border: 2px solid #00ffe5;
+  box-shadow: 0 0 6px #00ffe5;
 }
 
 .date {
-  font-size: 0.9em;
-  color: #ccc;
+  font-size: 0.95em;
+  color: #aaa;
   display: flex;
   align-items: center;
 }
 
 .body {
-  padding: 30px 20px;
+  padding: 32px 24px;
+  background-color: #1a1a2e;
 }
 
 .body .title {
-  font-size: 1.8em;
+  font-size: 1.9em;
   font-weight: bold;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
+  color: #00ffe5;
+  text-shadow: 0 0 5px #00ffe5;
 }
 
-.main-body p {
+.main-body p,
+.main-body li,
+.main-body span,
+.main-body a {
   font-size: 1em;
   line-height: 1.6em;
-  color: #ddd;
+  color: #cfcfcf;
 }
 
+.main-body a {
+  color: #00ffe5;
+  text-decoration: underline;
+}
+
+/* Ensure all images inside .main-body and .image-data have consistent size */
+.main-body img,
 .image-data img {
   width: 100%;
-  max-height: 300px;
+  max-width: 400px; /* You can adjust this value as needed */
+  height: auto;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #555;
+  border-radius: 10px;
+  margin: 10px 0;
+  display: block;
 }
+
+/* Optional: style the extracted images container */
+.image-data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
 
 .foot {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  padding: 15px 20px;
-  background-color: #444;
-  border-radius: 0 0 10px 10px;
+  padding: 18px 24px;
+  background: linear-gradient(to right, #1f1c2c, #928dab);
+  border-radius: 0 0 12px 12px;
 }
 
 .foot img {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   cursor: pointer;
+  filter: drop-shadow(0 0 4px #00ffe5);
 }
 
 /* ✅ Responsive Design */
@@ -99,7 +132,7 @@
   }
 
   .body .title {
-    font-size: 1.6em;
+    font-size: 1.7em;
   }
 }
 
@@ -107,22 +140,22 @@
   .contain {
     width: 90%;
     flex-direction: column;
-    padding: 15px;
+    padding: 20px;
   }
 
   .top,
   .foot {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
   }
 
   .body {
-    padding: 20px 15px;
+    padding: 24px 20px;
   }
 
   .body .title {
-    font-size: 1.4em;
+    font-size: 1.5em;
   }
 
   .main-body p {
@@ -130,19 +163,19 @@
   }
 
   .image-data img {
-    max-height: 250px;
+    max-height: 300px;
   }
 }
 
 @media (max-width: 480px) {
   .contain {
     width: 95%;
-    padding: 10px;
+    padding: 16px;
   }
 
   .top,
   .foot {
-    padding: 10px;
+    padding: 12px;
   }
 
   .profilePhoto img {
@@ -151,11 +184,11 @@
   }
 
   .date {
-    font-size: 0.8em;
+    font-size: 0.85em;
   }
 
   .body .title {
-    font-size: 1.2em;
+    font-size: 1.3em;
   }
 
   .main-body p {
@@ -163,11 +196,11 @@
   }
 
   .image-data img {
-    max-height: 200px;
+    max-height: 250px;
   }
 
   .foot img {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
 }
