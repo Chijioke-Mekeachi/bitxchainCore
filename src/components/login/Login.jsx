@@ -98,6 +98,12 @@ export const LoginPage = () => {
           Sign up
         </span>
       </div>
+      <div className="forgot-password">
+        Forgot Password {' '}
+        <span onClick={() => navigate('/forgot')} style={{ color: 'blue', cursor: 'pointer' }}>
+          Forgot Password
+        </span>
+      </div>
 
       <div className="button-container">
         <button className="submit" onClick={handleLogin} disabled={loading}>

@@ -42,7 +42,9 @@ export default function Profile() {
           <div className="settings-section">
             <h2 className="section-title">Settings</h2>
             <div className="settings-item">
-              <button className="select">Change Password</button>
+              <button className="select" onClick={()=>{
+                navigate('/change')
+              }}>Change Password</button>
             </div>
             <div className="settings-item">
               <button className="select" onClick={handleLogout}>Logout</button>

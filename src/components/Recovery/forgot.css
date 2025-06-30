@@ -1,0 +1,44 @@
+.forgot-container {
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+  margin-top: 80px;
+  background: rgba(0, 0, 0, 0.85);
+  width: 600px;
+  padding: 60px;
+  border: 2px solid #ffcc00;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+.forget-input{
+    display: flex;
+    font-size: 20px;
+    padding: 10px;
+    border-radius: 10px;
+    background: none;
+    border-width: 2px;
+    border-color: #ffcc00;
+}
+.card-btn{
+    border-width: 2px;
+    width: 90%;
+    font-size: 26px;
+    font-weight: 500;
+    border: 2px 2px;
+    padding: 10px;
+    border-color: #ffcc00;
+    border-radius: 5px;
+    background: none;
+    color: yellow;
+}
+.card-bottom{
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: 'center';
+}
+.card-btn:hover{
+    background: yellow;
+    color: black;
+}
