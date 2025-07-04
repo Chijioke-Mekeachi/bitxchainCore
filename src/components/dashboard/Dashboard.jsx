@@ -73,7 +73,7 @@ export default function Dashboard() {
   const handle_blog = () => { setProfile(false); setBuy(false); setWallet(false); setMenuOpen(false); setBlog(true); };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container-0">
       <nav className="navbar">
         <div className="icon">
           <img src={icon2} alt="icon" width={100} />

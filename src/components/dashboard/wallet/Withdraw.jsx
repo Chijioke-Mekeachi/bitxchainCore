@@ -14,11 +14,7 @@ export default function MyWithdrawRequests() {
   }, []);
 
   const getCurrentUser = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
+    const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return;
     setUserEmail(user.email);
     fetchMyRequestsFromAPI(user.email);
@@ -48,9 +44,9 @@ export default function MyWithdrawRequests() {
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <h2>🧾 My Withdraw & Transfer Requests</h2>
-        <button className="btn blue" onClick={() => fetchMyRequestsFromAPI(userEmail)}>
+      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ color: "#00f0ff" }}>🧾 My Requests</h2>
+        <button className="btn yellow" onClick={() => fetchMyRequestsFromAPI(userEmail)}>
           🔄 Refresh
         </button>
       </div>
@@ -63,59 +59,69 @@ export default function MyWithdrawRequests() {
         <>
           {/* Withdraw Section */}
           {requests.length > 0 && (
-            <div className="memo-box">
-              <h3>🏦 Withdraw Requests</h3>
-              <div className="wallet-info" style={{ flexDirection: "column", gap: "10px" }}>
+            <>
+              <h3 className="section-title">🏦 Withdraw Requests</h3>
+              <div className="message-table">
+                <div className="table-header">
+                  <div>Account Name</div>
+                  <div>Amount</div>
+                  <div>Bank</div>
+                  <div>Acct No.</div>
+                  <div>Status</div>
+                </div>
+
                 {requests.map((req) => (
                   <div
+                    className="table-row"
                     key={req.id}
                     onClick={() => setSelectedRequest(req)}
-                    className="wallet-info"
-                    style={{ cursor: "pointer", border: "1px solid #00f0ff", background: "#1a1a1a" }}
                   >
-                    <div>
-                      <div className="big-text">₦{Number(req.amount).toLocaleString()}</div>
-                      <div className="small-text">Bank: {req.bank_name}</div>
-                      <div className="small-text">Account: {req.account_number}</div>
-                    </div>
-                    <div className="right-text">
-                      <div className="small-text">Name: {req.bank_username}</div>
-                      <div className="small-text">Status: {req.sent_or_pending}</div>
-                    </div>
+                    <div>{req.bank_username}</div>
+                    <div>₦{Number(req.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</div>
+                    <div>{req.bank_name}</div>
+                    <div>{req.account_number}</div>
+                    <div className="status-cell">{req.sent_or_pending}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </>
           )}
 
           {/* Transfer Section */}
           {transfers.length > 0 && (
-            <div className="memo-box">
-              <h3>🔁 My Blurt Transfer Requests</h3>
-              <div className="wallet-info" style={{ flexDirection: "column", gap: "10px" }}>
+            <>
+              <h3 className="section-title" style={{ marginTop: "2rem" }}>
+                🔁 BLURT Transfer Requests
+              </h3>
+              <div className="message-table">
+                <div className="table-header">
+                  <div>Receiver</div>
+                  <div>Amount</div>
+                  <div>Status</div>
+                  <div>Date</div>
+                </div>
+
                 {transfers.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="wallet-info"
-                    style={{ background: "#1a1a1a", border: "1px solid #aa00ff" }}
-                  >
-                    <div>
-                      <div className="big-text">{Number(tx.amount).toFixed(3)} BLURT</div>
-                      <div className="small-text">To: {tx.to_username}</div>
+                  <div className="table-row" key={tx.id}>
+                    <div>{tx.busername}</div>
+                    <div>{Number(tx.amount).toFixed(3)} BLURT</div>
+                    <div className="status-cell">
+                      {tx.read ? (
+                        <span style={{ color: "#00ff99" }}>✅ Sent</span>
+                      ) : (
+                        <span style={{ color: "#ffcc00" }}>⌛ Pending</span>
+                      )}
                     </div>
-                    <div className="right-text">
-                      <div className="small-text">Status: {tx.status}</div>
-                      <div className="small-text">
-                        {new Date(tx.created_at).toLocaleString("en-NG", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                      </div>
+                    <div>
+                      {new Date(tx.created_at).toLocaleString("en-NG", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </>
           )}
         </>
       )}
@@ -124,33 +130,16 @@ export default function MyWithdrawRequests() {
       {selectedRequest && (
         <div className="popup-overlay" onClick={() => setSelectedRequest(null)}>
           <div className="popup" onClick={(e) => e.stopPropagation()}>
-            <h3>Withdraw Details</h3>
-            <p>
-              <strong>Account Name:</strong> {selectedRequest.bank_username}
-            </p>
-            <p>
-              <strong>Amount:</strong> ₦
-              {Number(selectedRequest.amount).toLocaleString("en-NG", {
-                minimumFractionDigits: 2,
-              })}
-            </p>
-            <p>
-              <strong>Bank:</strong> {selectedRequest.bank_name}
-            </p>
-            <p>
-              <strong>Account Number:</strong> {selectedRequest.account_number}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedRequest.sent_or_pending}
-            </p>
-            <p>
-              <strong>Date:</strong>{" "}
-              {new Date(selectedRequest.created_at).toLocaleString()}
-            </p>
+            <h3>Withdraw Request Details</h3>
+            <p><strong>Account Name:</strong> {selectedRequest.bank_username}</p>
+            <p><strong>Amount:</strong> ₦{Number(selectedRequest.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</p>
+            <p><strong>Bank:</strong> {selectedRequest.bank_name}</p>
+            <p><strong>Account Number:</strong> {selectedRequest.account_number}</p>
+            <p><strong>Status:</strong> {selectedRequest.sent_or_pending}</p>
+            <p><strong>Date:</strong> {new Date(selectedRequest.created_at).toLocaleString()}</p>
+
             <div className="popup-buttons">
-              <button className="btn blue" onClick={() => setSelectedRequest(null)}>
-                Close
-              </button>
+              <button className="btn cancel" onClick={() => setSelectedRequest(null)}>Close</button>
             </div>
           </div>
         </div>
