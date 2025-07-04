@@ -399,7 +399,7 @@ export default function Wallet() {
     }
 
     try {
-      const res = await fetch("http://localhost:4000/api/insert-transfer", {
+      const res = await fetch("https://bitapi-0m8c.onrender.com/api/insert-transfer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

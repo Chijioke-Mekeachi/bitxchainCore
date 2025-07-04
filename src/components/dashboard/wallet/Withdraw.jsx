@@ -27,7 +27,7 @@ export default function MyWithdrawRequests() {
   const fetchMyRequestsFromAPI = async (email) => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:4000/api/get-my-requests", {
+      const res = await fetch("https://bitapi-0m8c.onrender.com/api/get-my-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
