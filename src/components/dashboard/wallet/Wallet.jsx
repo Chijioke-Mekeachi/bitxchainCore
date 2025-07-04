@@ -29,11 +29,36 @@ export default function Wallet() {
   const [withdrawBankUsername, setWithdrawBankUsername] = useState("");
   const [withdrawAccountNumber, setWithdrawAccountNumber] = useState("");
   const [loadingWithdraw, setLoadingWithdraw] = useState(false);
+  const [transfers, setTransfers] = useState([]);
+
+  useEffect(() => {
+    const getProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setProfile(user);
+    };
+
+    getProfile();
+  }, []);
+
 
 
   useEffect(() => {
     fetchBlurtRate();
     fetchUserProfile();
+  }, []);
+  useEffect(() => {
+    const fetchTransfers = async () => {
+      try {
+        const { data } = await axios.post("https://bitapi-0m8c.onrender.com/api/get-transfer-requests", {
+          email: userEmail,
+        });
+        setTransfers(data.transfers);
+      } catch (err) {
+        console.error("Failed to load transfer requests", err);
+      }
+    };
+
+    fetchTransfers();
   }, []);
 
   const handleBlurtRequest = (type) => {
@@ -330,6 +355,93 @@ export default function Wallet() {
       showMessage("Error contacting the server.", "error");
     }
   };
+  const sendToSupabase = async () => {
+    if (!popupUsername || !requestAmount || isNaN(requestAmount)) {
+      showMessage("Fill all fields correctly", "error");
+      return;
+    }
+
+    if (parseFloat(requestAmount) > parseFloat(blurtBalance)) {
+      showMessage("Insufficient balance.", "error");
+      return;
+    }
+
+    setLoadingRequest(true);
+
+    const { error } = await supabase.from("blurt_requests").insert([
+      {
+        user_id: profile.id,
+        username: profile.username,
+        busername: profile.busername,
+        email: profile.email,
+        request_type: "TRANSFER",
+        amount: parseFloat(requestAmount),
+        memo: `To: ${popupUsername}`,
+      },
+    ]);
+
+    if (error) {
+      showMessage("Failed to send transfer request.", "error");
+    } else {
+      showMessage("Transfer request submitted!");
+      setPopupUsername("");
+      setRequestAmount("");
+      setShowPopup(false);
+    }
+
+    setLoadingRequest(false);
+  };
+
+  const sendTransferRequestViaAPI = async ({ profile, username, amount, memo = "", showMessage, onDone }) => {
+    if (!username || !amount || isNaN(amount)) {
+      showMessage("❗ Fill all fields correctly", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:4000/api/insert-transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: profile.id,
+          username: profile.username,
+          busername: profile.busername,
+          email: profile.email,
+          amount: parseFloat(amount),
+          memo,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        showMessage("✅ Transfer request sent!", "success");
+        onDone?.();
+      } else {
+        showMessage("❌ " + (result.message || "Failed"), "error");
+      }
+    } catch (err) {
+      console.error("❌ Request error:", err);
+      showMessage("❌ Network error", "error");
+    }
+  };
+  const handleSend = async () => {
+    setLoadingRequest(true);
+
+    await sendTransferRequestViaAPI({
+      profile,
+      username: popupUsername,
+      amount: requestAmount,
+      showMessage,
+      onDone: () => {
+        setPopupUsername("");
+        setRequestAmount("");
+        setShowPopup(false);
+      },
+    });
+
+    setLoadingRequest(false);
+  };
 
 
   if (!profile) return <div className="loading">Loading wallet...</div>;
@@ -369,7 +481,17 @@ export default function Wallet() {
           </div>
 
           <div className="btn-group">
-            <button className="btn blue" onClick={() => setShowPopup(true)}>Transfer Blurt</button>
+            <button
+              className="btn blue"
+              onClick={() => {
+                setRequestType("transfer");
+                setShowPopup(true);
+                setPopupUsername("");
+                setRequestAmount("");
+              }}
+            >
+              Transfer Blurt
+            </button>
             <button className="btn purple" onClick={() => handleBlurtRequest("buy")}>💱 Buy Blurt</button>
             <button className="btn yellow" onClick={() => { setRequestType("sell"); setShowSellPopup(true); setRequestAmount(""); }}>💵 Sell Blurt</button>
           </div>
@@ -379,31 +501,51 @@ export default function Wallet() {
           <MyWithdrawRequests />
         </div>
       </div>
-      <Stat/>
+      <Stat />
 
       {/* Add Fund popup */}
-      {
-        showPopup && (
-          <div className="popup-overlay" onClick={() => setShowPopup(false)}>
-            <div className="popup" onClick={(e) => e.stopPropagation()}>
-              <h3>Update Blurt Balance</h3>
-              <input
-                type="text"
-                placeholder="Blurt Username"
-                value={popupUsername}
-                onChange={(e) => setPopupUsername(e.target.value)}
-                className="popup-input"
-              />
-              <div className="popup-buttons">
-                <button className="btn" onClick={updateBlurtBalance}>
-                  {loadingUpdate ? "Updating..." : "Update Balance"}
-                </button>
-                <button className="btn cancel" onClick={() => setShowPopup(false)}>Cancel</button>
-              </div>
+      {showPopup && requestType === "transfer" && (
+        <div className="popup-overlay" onClick={() => setShowPopup(false)}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <h3>Transfer BLURT</h3>
+
+            <input
+              type="text"
+              placeholder="Receiver Blurt Username"
+              value={popupUsername}
+              onChange={(e) => setPopupUsername(e.target.value)}
+              className="popup-input"
+            />
+
+            <input
+              type="number"
+              placeholder="Amount"
+              value={requestAmount}
+              onChange={(e) => setRequestAmount(e.target.value)}
+              className="popup-input"
+            />
+
+            <div className="popup-buttons">
+              <button
+                className="btn"
+                onClick={
+                  handleSend
+                }
+              >
+                {loadingRequest ? "Sending..." : "Send"}
+              </button>
+
+              <button className="btn cancel" onClick={() => setShowPopup(false)}>
+                Cancel
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
+
+
+
+
       {
         showWithdraw && (
           <div className="popup-overlay" onClick={() => setShowWithdraw(false)}>
