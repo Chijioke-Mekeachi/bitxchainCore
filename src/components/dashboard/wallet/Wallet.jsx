@@ -3,7 +3,7 @@ import "./wallet.css";
 import { supabase } from "../../../lib/supabase";
 import MyWithdrawRequests from "./Withdraw";
 import Stat from "../Stat";
-
+import axios from 'axios'
 export default function Wallet() {
   const [profile, setProfile] = useState(null);
   const [blurtBalance, setBlurtBalance] = useState("0.0000");
@@ -37,8 +37,9 @@ export default function Wallet() {
     const getProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setProfile(user);
+      console.log(user);
+      console.log(profiles);
     };
-
     getProfile();
   }, []);
 

@@ -4,7 +4,7 @@ import key from '../../assets/key.svg';
 import emailIcon from '../../assets/email.svg';
 import icon2 from '../../assets/icon2.png';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { supabase } from '../../lib/supabase'; // Adjust path as needed
 
 export const LoginPage = () => {
   const [show, setShow] = useState("password");
@@ -36,23 +36,32 @@ export const LoginPage = () => {
     }
 
     setLoading(true);
+
     try {
-      const response = await axios.post('https://bitapi-0m8c.onrender.com/api/login', {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       });
 
-      const { user, token } = response.data;
+      if (error) {
+        throw error;
+      }
 
-      // Save profile and token
+      const user = data.user;
+      const session = data.session;
+
+      // Store in localStorage
       localStorage.setItem('userProfile', JSON.stringify(user));
-      localStorage.setItem('authToken', token);
+      localStorage.setItem('authToken', session?.access_token);
 
       showTempMessage("Login successful!", 'success');
+
+      // Optional: fetch profile data from 'users' table
+      // const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
+
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || "Login failed.";
-      showTempMessage(errorMsg, 'error');
+      showTempMessage(err.message || "Login failed.", 'error');
     } finally {
       setLoading(false);
     }
@@ -99,9 +108,9 @@ export const LoginPage = () => {
         </span>
       </div>
       <div className="forgot-password">
-        Forgot Password {' '}
+        Forgot Password{' '}
         <span onClick={() => navigate('/forgot')} style={{ color: 'blue', cursor: 'pointer' }}>
-          Forgot Password
+          Reset
         </span>
       </div>
 
