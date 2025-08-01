@@ -30,6 +30,8 @@ export default function Wallet() {
   const [withdrawAccountNumber, setWithdrawAccountNumber] = useState("");
   const [loadingWithdraw, setLoadingWithdraw] = useState(false);
   const [transfers, setTransfers] = useState([]);
+  const [withdrawMethod, setWithdrawMethod] = useState("naira"); // or 'usdt'
+  const [walletAddress, setWalletAddress] = useState(""); // for USDT
 
   useEffect(() => {
     const getProfile = async () => {
@@ -260,43 +262,64 @@ export default function Wallet() {
   };
 
   const handleWithdraw = async () => {
-    if (
-      !withdrawAmount ||
-      !withdrawBankName ||
-      !withdrawBankUsername ||
-      !withdrawAccountNumber
-    ) {
-      return showMessage("Please fill all fields.", "error");
+    if (!withdrawAmount || isNaN(parseFloat(withdrawAmount))) {
+      return showMessage("Enter a valid amount.", "error");
     }
 
     const parsedAmount = parseFloat(withdrawAmount);
-    if (isNaN(parsedAmount) || parsedAmount < 500) {
-      return showMessage("Minimum withdrawal is ₦500", "error");
+    if (
+      (withdrawMethod === "naira" && parsedAmount < 500) ||
+      (withdrawMethod === "usdt" && parsedAmount < 5)
+    ) {
+      return showMessage(
+        withdrawMethod === "naira"
+          ? "Minimum withdrawal is ₦500"
+          : "Minimum USDT withdrawal is $5",
+        "error"
+      );
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return showMessage("User not authenticated", "error");
     }
 
     setLoadingWithdraw(true);
-    try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
 
-      if (authError || !user) {
-        return showMessage("User not authenticated", "error");
+    try {
+      const payload = {
+        email: profile.email,
+        amount: parsedAmount,
+        method: withdrawMethod,
+        user_id: profile.id,
+      };
+
+      if (withdrawMethod === "naira") {
+        if (!withdrawBankName || !withdrawBankUsername || !withdrawAccountNumber) {
+          return showMessage("Fill all bank details.", "error");
+        }
+
+        payload.accountName = withdrawBankUsername;
+        payload.accountNumber = withdrawAccountNumber;
+        payload.bank = withdrawBankName;
+      }
+
+      if (withdrawMethod === "usdt") {
+        if (!walletAddress) {
+          return showMessage("Enter your USDT wallet address.", "error");
+        }
+
+        payload.walletAddress = walletAddress;
       }
 
       const res = await fetch("https://bitapi-0m8c.onrender.com/api/withdraw", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: user.email,
-          amount: parsedAmount,
-          bank: withdrawBankName,
-          accountName: withdrawBankUsername,
-          accountNumber: withdrawAccountNumber,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -305,17 +328,26 @@ export default function Wallet() {
         throw new Error(data.message || "Withdrawal failed.");
       }
 
-      showMessage("Withdraw request submitted successfully!", "success");
+      showMessage(data.message || "Withdraw successful!", "success");
+
+      // Update local state balances
+      if (withdrawMethod === "naira" && data.newBalance) {
+        setNairaBalance(parseFloat(data.newBalance).toFixed(2));
+      }
+      if (withdrawMethod === "usdt" && data.newBalance) {
+        setBlurtBalance(parseFloat(data.newBalance).toFixed(4));
+      }
 
       // Reset form
       setWithdrawAmount("");
       setWithdrawBankName("");
       setWithdrawBankUsername("");
       setWithdrawAccountNumber("");
+      setWalletAddress("");
       setShowWithdraw(false);
     } catch (error) {
       console.error("Withdraw error:", error);
-      showMessage(error.message || "Error submitting request", "error");
+      showMessage(error.message || "Error submitting withdrawal", "error");
     } finally {
       setLoadingWithdraw(false);
     }
@@ -323,9 +355,10 @@ export default function Wallet() {
 
 
 
+
   const handleTransferConfirmation = async () => {
     try {
-      const response = await fetch("https://bitapi-0m8c.onrender.com/api/confirm-transfer", {
+      const response = await fetch("http://localhost:4000/api/confirm-transfer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -457,7 +490,8 @@ export default function Wallet() {
         </div>
 
         <div className="wallet-section">
-          <div className="wallet-info">
+          <div className="top">
+            <div className="wallet-info">
             <div>
               <p className="big-text">{blurtBalance} BLURT</p>
               <p className="small-text">
@@ -469,6 +503,8 @@ export default function Wallet() {
               <p className="big-text">₦{nairaBalance}</p>
               <button className="btn green" onClick={() => { setShowWithdraw(true) }}>Withdraw</button>
             </div>
+          </div>
+
           </div>
 
           <div className="memo-box">
@@ -546,49 +582,79 @@ export default function Wallet() {
 
 
 
-      {
-        showWithdraw && (
-          <div className="popup-overlay" onClick={() => setShowWithdraw(false)}>
-            <div className="popup" onClick={(e) => e.stopPropagation()}>
-              <h3>Withdraw Funds</h3>
-              <input
-                type="number"
-                placeholder="Amount to Withdraw"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="popup-input"
-              />
+
+      {showWithdraw && (
+        <div className="popup-overlay" onClick={() => setShowWithdraw(false)}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <h3>Withdraw Funds</h3>
+
+            <div className="popup-input">
+              <label>Withdrawal Type</label>
+              <select
+                value={withdrawMethod}
+                onChange={(e) => setWithdrawMethod(e.target.value)}
+              >
+                <option value="naira">₦ Naira Bank</option>
+                <option value="usdt">USDT Wallet</option>
+              </select>
+            </div>
+
+            <input
+              type="number"
+              placeholder={`Amount to Withdraw (${withdrawMethod === "usdt" ? "min $5" : "min ₦500"})`}
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              className="popup-input"
+            />
+
+            {withdrawMethod === "naira" && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Bank Name (e.g., Access Bank)"
+                  value={withdrawBankName}
+                  onChange={(e) => setWithdrawBankName(e.target.value)}
+                  className="popup-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Account Holder Name"
+                  value={withdrawBankUsername}
+                  onChange={(e) => setWithdrawBankUsername(e.target.value)}
+                  className="popup-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Account Number"
+                  value={withdrawAccountNumber}
+                  onChange={(e) => setWithdrawAccountNumber(e.target.value)}
+                  className="popup-input"
+                />
+              </>
+            )}
+
+            {withdrawMethod === "usdt" && (
               <input
                 type="text"
-                placeholder="Bank Name (e.g., Access Bank)"
-                value={withdrawBankName}
-                onChange={(e) => setWithdrawBankName(e.target.value)}
+                placeholder="USDT Wallet Address (TRC20 preferred)"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
                 className="popup-input"
               />
-              <input
-                type="text"
-                placeholder="Account Holder Name"
-                value={withdrawBankUsername}
-                onChange={(e) => setWithdrawBankUsername(e.target.value)}
-                className="popup-input"
-              />
-              <input
-                type="text"
-                placeholder="Account Number"
-                value={withdrawAccountNumber}
-                onChange={(e) => setWithdrawAccountNumber(e.target.value)}
-                className="popup-input"
-              />
-              <div className="popup-buttons">
-                <button className="btn" onClick={handleWithdraw}>
-                  {loadingWithdraw ? "Submitting..." : "Submit Withdraw"}
-                </button>
-                <button className="btn cancel" onClick={() => setShowWithdraw(false)}>Cancel</button>
-              </div>
+            )}
+
+            <div className="popup-buttons">
+              <button className="btn" onClick={handleWithdraw}>
+                {loadingWithdraw ? "Submitting..." : "Submit Withdraw"}
+              </button>
+              <button className="btn cancel" onClick={() => setShowWithdraw(false)}>
+                Cancel
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
+
 
 
       {/* Buy Request popup */}
