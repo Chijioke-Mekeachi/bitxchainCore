@@ -596,7 +596,7 @@ export default function Wallet() {
                 onChange={(e) => setWithdrawMethod(e.target.value)}
               >
                 <option value="naira">₦ Naira Bank</option>
-                <option value="usdt">USDT Wallet</option>
+                {/* <option value="usdt">USDT Wallet</option> */}
               </select>
             </div>
 
