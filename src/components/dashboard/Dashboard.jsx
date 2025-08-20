@@ -51,7 +51,7 @@ export default function Dashboard() {
 
   // Countdown logic
   useEffect(() => {
-  const launchDate = new Date("2025-08-20T00:00:00"); // Set testnet date
+  const launchDate = new Date("2025-08-30T00:00:00"); // Set testnet date
 
   const updateCountdown = () => {
     const now = new Date();
